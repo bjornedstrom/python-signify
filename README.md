@@ -30,6 +30,10 @@ broken_sig = signature.replace('Malgi', 'Magic')
 print Signify().verify_simple(pubkey, broken_sig, message)
 ```
 
+## Experimental: Pure version
+
+There is also a pure Python version of some signify behavior in the `signify.pure` module. This is too slow for practical use but is included in this code as a bonus :-)
+
 ## About
 
 Copyright Björn Edström 2015. See LICENSE for details.
