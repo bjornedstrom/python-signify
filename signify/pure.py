@@ -42,10 +42,13 @@ class Signify(object):
         assert kdfrounds == 42
 
         xorkey = bcrypt.kdf(password, salt, 64, kdfrounds)
-
         priv = xorbuf(seckey, xorkey)
 
-        return priv
+        checksum_ref = hashlib.sha512(priv).digest()[0:8]
+        if checksum != checksum_ref:
+            raise KeyError('incorrect password')
+
+        return priv, keynum
 
     def _parse_public_key(self, blob):
         comment, b64 = blob.split('\n', 1)
@@ -56,7 +59,7 @@ class Signify(object):
 
         assert pkalg == 'Ed'
 
-        return pubkey
+        return pubkey, keynum
 
     def _parse_sigfile(self, blob):
         comment, b64 = blob.split('\n', 1)
@@ -67,20 +70,24 @@ class Signify(object):
 
         assert pkalg == 'Ed'
 
-        return sig
+        return sig, keynum
 
-    #def sign_simple(self, priv, password, message):
-    #    privkey = self._decrypt_secret_key(priv, password)
-    #    pubkey = ed25519.publickey(privkey)
-    #    print [pubkey]
-    #    sig = ed25519.signature(message, privkey, pubkey)
-    #    print [sig]
+    def sign_simple(self, priv, password, message):
+        priv_buf, priv_keynum = self._decrypt_secret_key(priv, password)
+        key_obj = ed25519.keys.SigningKey(priv_buf)
+
+        sig_buf = key_obj.sign(message)
+
+        return 'untrusted comment: signature from TODO secret key\n' + \
+            base64.b64encode('Ed' + priv_keynum + sig_buf)
 
     def verify_simple(self, pubkey, sig, message):
-        sig_buf = self._parse_sigfile(sig)
-        pub_buf = self._parse_public_key(pubkey)
+        sig_buf, sig_keynum = self._parse_sigfile(sig)
+        pub_buf, pub_keynum = self._parse_public_key(pubkey)
+
+        key_obj = ed25519.keys.VerifyingKey(pub_buf)
         try:
-            ed25519.checkvalid(sig_buf, message, pub_buf)
-        except Exception, e:
+            key_obj.verify(sig_buf, message)
+            return True
+        except ed25519.BadSignatureError, e:
             raise InvalidSignature('signify: signature verification failed')
-        return True
