@@ -2,23 +2,23 @@
 
 0.0.0-DEVEL
 
-Signify was originally written for OpenBSD to sign files and packages. This projects contains some code for working with signify keys/signatures from Python.
+[Signify](http://www.tedunangst.com/flak/post/signify) was originally written for OpenBSD to sign files and packages. This projects contains some code for working with signify keys/signatures from Python.
 
 Specifically this project contains two modules: one that uses the `subprocess` module and one that simply re-implements Signify functionality directly.
 
-## Module 1: Subprocess based wrapper around signify(1)
+## Module 1: "Pure" Python version
 
-This is a fairly simple (subprocess based) wrapper around the OpenBSD signify(1) command. It basically does two things for you to make your life a little bit easier:
+The `signify.pure` module has a Python implementation of some parts of `signify`, without requiring the signify binary or the subprocess module. This code requires the Python bcrypt and ed25519 modules.
 
-- It handles thread safety and the actual calling of subprocess, which is easy to screw up.
-- For convenience it will aid you in juggling temporary files in case you want to work with strings/buffers instead of paths, as signify(1) work on paths.
+### Dependencies
 
-Please make sure you read and understand the library docstrings before you use the code. There are some security considerations.
+- [python-ed25519](https://github.com/warner/python-ed25519]) (`pip install ed25519`)
+- [py-bcrypt](py-bcrypt) (`pip install py-bcrypt`)
 
-### Example
+### Example (Python 2)
 
 ```python
-from signify import Signify
+from signify.pure import Signify
 
 pubkey = """untrusted comment: bjorntest public key
 RWQ100QRGZoxU+Oy1g7Ko+8LjK1AQLIEavp/NuL54An1DC0U2cfCLKEl
@@ -36,14 +36,14 @@ broken_sig = signature.replace('Malgi', 'Magic')
 print Signify().verify_simple(pubkey, broken_sig, message)
 ```
 
-## Module 2: "Pure" Python version
+## Module 2: Subprocess based wrapper around signify(1)
 
-The `signify.pure` module has a Python implementation of some parts of `signify`, without requiring the signify binary or the subprocess module. This code requires the Python bcrypt and ed25519 modules.
+This is a fairly simple (subprocess based) wrapper around the OpenBSD signify(1) command. It basically does two things for you to make your life a little bit easier:
 
-### Dependencies
+- It handles thread safety and the actual calling of subprocess, which is easy to screw up.
+- For convenience it will aid you in juggling temporary files in case you want to work with strings/buffers instead of paths, as signify(1) work on paths.
 
-- [python-ed25519](https://github.com/warner/python-ed25519]) (`pip install ed25519`)
-- [py-bcrypt](py-bcrypt) (`pip install py-bcrypt`)
+Please make sure you read and understand the library docstrings before you use the code. There are some security considerations.
 
 ### Example
 

@@ -15,7 +15,7 @@ RWQ100QRGZoxU+Oy1g7Ko+8LjK1AQLIEavp/NuL54An1DC0U2cfCLKEl
             'priv': """untrusted comment: bjorntest secret key
 RWRCSwAAACqHVbmAUokJcTpgKhRbw+/W+Q7nrVPi3eU100QRGZoxU86ZWb3NjEp9ScrFddFy0o2D1KtZ0440imfaWmUebGfs0Hm+Fm9SCtaJgtjFtrUlPlmnjksY8zdcXr2NvjLsr0A=
 """,
-            'message': """my message
+            'message': b"""my message
 """,
             'sig': """untrusted comment: signature from bjorntest secret key
 RWQ100QRGZoxU/gjzE8m6GYtfICqE0Ap8SdXRSHrpjnSBKMc2RMalgi5RKrEHmKfTmcsuB9ZzDCo6K6sYEqaEcEnnAFa0zCewAg=
@@ -28,11 +28,11 @@ RWQ100QRGZoxU/gjzE8m6GYtfICqE0Ap8SdXRSHrpjnSBKMc2RMalgi5RKrEHmKfTmcsuB9ZzDCo6K6s
 
     def test_extraction(self):
         self.assertEquals(
-            '\xe3\xb2\xd6\x0e\xca\xa3\xef\x0b\x8c\xad@@\xb2\x04j\xfa\x7f6\xe2\xf9\xe0\t\xf5\x0c-\x14\xd9\xc7\xc2,\xa1%',
+            b'\xe3\xb2\xd6\x0e\xca\xa3\xef\x0b\x8c\xad@@\xb2\x04j\xfa\x7f6\xe2\xf9\xe0\t\xf5\x0c-\x14\xd9\xc7\xc2,\xa1%',
             self.obj.extract_raw_public_key(self.KAT[0]['pub']))
 
         self.assertEquals(
-            'D@\xd9\xca\xb2\x96;\xa0^\xbb\x16\xc8\x0f\xf7Y=(hu\x85\xbd\xe4i\xf6\xcf\x0f\xfb#\xc1\xfa\xe0\xa1\xe3\xb2\xd6\x0e\xca\xa3\xef\x0b\x8c\xad@@\xb2\x04j\xfa\x7f6\xe2\xf9\xe0\t\xf5\x0c-\x14\xd9\xc7\xc2,\xa1%',
+            b'D@\xd9\xca\xb2\x96;\xa0^\xbb\x16\xc8\x0f\xf7Y=(hu\x85\xbd\xe4i\xf6\xcf\x0f\xfb#\xc1\xfa\xe0\xa1\xe3\xb2\xd6\x0e\xca\xa3\xef\x0b\x8c\xad@@\xb2\x04j\xfa\x7f6\xe2\xf9\xe0\t\xf5\x0c-\x14\xd9\xc7\xc2,\xa1%',
             self.obj.extract_raw_private_key(self.KAT[0]['priv'], 'test'))
 
     def test_verify_success(self):
@@ -72,12 +72,12 @@ RWQ100QRGZoxU/gjzE8m6GYtfICqE0Ap8SdXRSHrpjnSBKMc2RMalgi5RKrEHmKfTmcsuB9ZzDCo6K6s
 
         sig = self.obj.sign_simple(priv,
                                    None,
-                                   'My Message')
+                                   b'My Message')
 
         self.assertTrue(
             self.obj.verify_simple(pub,
                                    sig,
-                                   'My Message'))
+                                   b'My Message'))
 
     def test_generate_no_comment(self):
         pub, priv = self.obj.generate(None, None)
@@ -93,12 +93,12 @@ RWQ100QRGZoxU/gjzE8m6GYtfICqE0Ap8SdXRSHrpjnSBKMc2RMalgi5RKrEHmKfTmcsuB9ZzDCo6K6s
 
         sig = self.obj.sign_simple(priv,
                                    'testpassword',
-                                   'My Message')
+                                   b'My Message')
 
         self.assertTrue(
             self.obj.verify_simple(pub,
                                    sig,
-                                   'My Message'))
+                                   b'My Message'))
 
 
 if __name__ == '__main__':
