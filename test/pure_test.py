@@ -26,6 +26,15 @@ RWQ100QRGZoxU/gjzE8m6GYtfICqE0Ap8SdXRSHrpjnSBKMc2RMalgi5RKrEHmKfTmcsuB9ZzDCo6K6s
     def setUp(self):
         self.obj = signify.Signify()
 
+    def test_extraction(self):
+        self.assertEquals(
+            '\xe3\xb2\xd6\x0e\xca\xa3\xef\x0b\x8c\xad@@\xb2\x04j\xfa\x7f6\xe2\xf9\xe0\t\xf5\x0c-\x14\xd9\xc7\xc2,\xa1%',
+            self.obj.extract_raw_public_key(self.KAT[0]['pub']))
+
+        self.assertEquals(
+            'D@\xd9\xca\xb2\x96;\xa0^\xbb\x16\xc8\x0f\xf7Y=(hu\x85\xbd\xe4i\xf6\xcf\x0f\xfb#\xc1\xfa\xe0\xa1\xe3\xb2\xd6\x0e\xca\xa3\xef\x0b\x8c\xad@@\xb2\x04j\xfa\x7f6\xe2\xf9\xe0\t\xf5\x0c-\x14\xd9\xc7\xc2,\xa1%',
+            self.obj.extract_raw_private_key(self.KAT[0]['priv'], 'test'))
+
     def test_verify_success(self):
         self.assertTrue(
             self.obj.verify_simple(self.KAT[0]['pub'],

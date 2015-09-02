@@ -105,22 +105,37 @@ class Signify(object):
 
         return sig, keynum
 
-    def generate(self, comment, password):
-        """Generate a signify keypair.
+    def extract_raw_public_key(self, pubkey):
+        """ADVANCED: Given a Signify public key, return the raw ed25519 key.
 
-        @param comment: A comment to name the keypair, or None.
-        @param password: A password to protect the private key, or None.
+        This is dangerous and be careful.
+        """
+
+        key, keynum = self._parse_public_key(pubkey)
+        return key
+
+    def extract_raw_private_key(self, privkey, password):
+        """ADVANCED: Given a Signify private key, return the raw ed25519 key.
+
+        This is dangerous so be careful.
+        """
+
+        priv_buf, priv_keynum, comment = self._decrypt_secret_key(privkey, password)
+        return priv_buf
+
+    def generate_from_raw(self, comment, password, raw_pub, raw_priv):
+        """ADVANCED: Given a raw Ed25519 key pair raw_pub and raw_priv,
+        create a Signify keypair.
+
+        See generate() for documentation.
         """
 
         if comment is None:
             comment = 'signify'
 
-        sk, vk = ed25519.keys.create_keypair()
         keynum = os.urandom(8)
 
         # private key
-        sk_buf = sk.to_bytes()
-        #print [sk_buf]
         kdfrounds = 42
         salt = os.urandom(16)
 
@@ -129,19 +144,27 @@ class Signify(object):
             xorkey = '\x00' * 64
         else:
             xorkey = bcrypt.kdf(password, salt, 64, kdfrounds)
-        protected_key = xorbuf(xorkey, sk_buf)
-        checksum = hashlib.sha512(sk_buf).digest()[0:8]
+        protected_key = xorbuf(xorkey, raw_priv)
+        checksum = hashlib.sha512(raw_priv).digest()[0:8]
 
         priv_blob = 'Ed' + 'BK' + struct.pack('!L', kdfrounds) + \
                     salt + checksum + keynum + protected_key
         priv = write_message('%s secret key' % (comment,), priv_blob)
 
         # public key
-        vk_buf = vk.to_bytes()
-        pub_blob = 'Ed' + keynum + vk_buf
+        pub_blob = 'Ed' + keynum + raw_pub
         pub = write_message('%s public key' % (comment,), pub_blob)
 
         return pub, priv
+
+    def generate(self, comment, password):
+        """Generate a signify keypair.
+
+        @param comment: A comment to name the keypair, or None.
+        @param password: A password to protect the private key, or None.
+        """
+        sk, vk = ed25519.keys.create_keypair()
+        return self.generate_from_raw(comment, password, vk.to_bytes(), sk.to_bytes())
 
     def sign_simple(self, priv, password, message):
         """Sign message with the private key.
