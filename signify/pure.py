@@ -27,26 +27,39 @@ def xorbuf(buf1, buf2):
     return ''.join(res)
 
 
+def write_message(comment, blob):
+    return 'untrusted comment: %s\n%s\n' % (comment, base64.b64encode(blob))
+
+
+def read_message(msg):
+    try:
+        comment_line, b64 = msg.split('\n', 1)
+    except:
+        raise SignifyError('malformed message')
+
+    try:
+        blob = base64.b64decode(b64)
+    except:
+        raise SignifyError('malformed message: base64 error')
+
+    try:
+        comment = re.findall(r'^untrusted comment: (.*?)$', comment_line)[0]
+    except:
+        raise SignifyError('malformed message: expected a comment line')
+
+    return (comment, blob)
+
+
 class Signify(object):
     def __init__(self):
         pass
 
-    def _decrypt_secret_key(self, blob, password):
-        try:
-            comment, b64 = blob.split('\n', 1)
-        except:
-            raise SignifyError('malformed blob')
-
-        extracted_comment = re.findall(r'^untrusted comment: (.*?) secret key$', comment)
-        if extracted_comment:
-            extracted_comment = extracted_comment[0]
-        else:
-            extracted_comment = 'signify'
+    def _decrypt_secret_key(self, msg, password):
+        comment, blob = read_message(msg)
 
         try:
-            buf = base64.b64decode(b64)
             pkalg, kdfalg, kdfrounds, salt, checksum, keynum, seckey = \
-                struct.unpack('!2s2sL16s8s8s64s', buf)
+                struct.unpack('!2s2sL16s8s8s64s', blob)
 
             assert pkalg == 'Ed'
             assert kdfalg == 'BK'
@@ -64,15 +77,14 @@ class Signify(object):
         if checksum != checksum_ref:
             raise KeyError('incorrect password')
 
-        return priv, keynum, extracted_comment
+        return priv, keynum, comment
 
-    def _parse_public_key(self, blob):
+    def _parse_public_key(self, msg):
+        comment, blob = read_message(msg)
+
         try:
-            comment, b64 = blob.split('\n', 1)
-
-            buf = base64.b64decode(b64)
             pkalg, keynum, pubkey = \
-                struct.unpack('!2s8s32s', buf)
+                struct.unpack('!2s8s32s', blob)
 
             assert pkalg == 'Ed'
         except Exception, e:
@@ -80,13 +92,12 @@ class Signify(object):
 
         return pubkey, keynum
 
-    def _parse_sigfile(self, blob):
-        try:
-            comment, b64 = blob.split('\n', 1)
+    def _parse_sigfile(self, msg):
+        comment, blob = read_message(msg)
 
-            buf = base64.b64decode(b64)
+        try:
             pkalg, keynum, sig = \
-                struct.unpack('!2s8s64s', buf)
+                struct.unpack('!2s8s64s', blob)
 
             assert pkalg == 'Ed'
         except Exception, e:
@@ -121,14 +132,14 @@ class Signify(object):
         protected_key = xorbuf(xorkey, sk_buf)
         checksum = hashlib.sha512(sk_buf).digest()[0:8]
 
-        priv = 'untrusted comment: ' + comment + ' secret key\n' + \
-               base64.b64encode('Ed' + 'BK' + struct.pack('!L', kdfrounds) + \
-                                salt + checksum + keynum + protected_key) + '\n'
+        priv_blob = 'Ed' + 'BK' + struct.pack('!L', kdfrounds) + \
+                    salt + checksum + keynum + protected_key
+        priv = write_message('%s secret key' % (comment,), priv_blob)
 
         # public key
         vk_buf = vk.to_bytes()
-        pub = 'untrusted comment: ' + comment + ' public key\n' + \
-              base64.b64encode('Ed' + keynum + vk_buf) + '\n'
+        pub_blob = 'Ed' + keynum + vk_buf
+        pub = write_message('%s public key' % (comment,), pub_blob)
 
         return pub, priv
 
@@ -145,8 +156,8 @@ class Signify(object):
 
         sig_buf = key_obj.sign(message)
 
-        return 'untrusted comment: signature from ' + comment + ' secret key\n' + \
-            base64.b64encode('Ed' + priv_keynum + sig_buf) + '\n'
+        sig_blob = 'Ed' + priv_keynum + sig_buf
+        return write_message('signature from %s' % (comment,), sig_blob)
 
     def verify_simple(self, pubkey, sig, message):
         """Perform signature verification.
