@@ -121,6 +121,13 @@ class Signify(object):
         return pub, priv
 
     def sign_simple(self, priv, password, message):
+        """Sign message with the private key.
+
+        @param priv: private key blob
+        @param password: The password that protects the private key, or None.
+        @param message: The message to be signed.
+        """
+
         priv_buf, priv_keynum, comment = self._decrypt_secret_key(priv, password)
         key_obj = ed25519.keys.SigningKey(priv_buf)
 
@@ -130,6 +137,15 @@ class Signify(object):
             base64.b64encode('Ed' + priv_keynum + sig_buf) + '\n'
 
     def verify_simple(self, pubkey, sig, message):
+        """Perform signature verification.
+
+        throws InvalidSignature on error.
+
+        @param pubkey: The public key to verify against.
+        @param sig: The signature blob.
+        @param message: The message that was signed.
+        """
+
         sig_buf, sig_keynum = self._parse_sigfile(sig)
         pub_buf, pub_keynum = self._parse_public_key(pubkey)
 
