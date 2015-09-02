@@ -32,7 +32,10 @@ class Signify(object):
         pass
 
     def _decrypt_secret_key(self, blob, password):
-        comment, b64 = blob.split('\n', 1)
+        try:
+            comment, b64 = blob.split('\n', 1)
+        except:
+            raise SignifyError('malformed blob')
 
         extracted_comment = re.findall(r'^untrusted comment: (.*?) secret key$', comment)
         if extracted_comment:
@@ -40,13 +43,16 @@ class Signify(object):
         else:
             extracted_comment = 'signify'
 
-        buf = base64.b64decode(b64)
-        pkalg, kdfalg, kdfrounds, salt, checksum, keynum, seckey = \
-            struct.unpack('!2s2sL16s8s8s64s', buf)
+        try:
+            buf = base64.b64decode(b64)
+            pkalg, kdfalg, kdfrounds, salt, checksum, keynum, seckey = \
+                struct.unpack('!2s2sL16s8s8s64s', buf)
 
-        assert pkalg == 'Ed'
-        assert kdfalg == 'BK'
-        assert kdfrounds in [0, 42]
+            assert pkalg == 'Ed'
+            assert kdfalg == 'BK'
+            assert kdfrounds in [0, 42]
+        except Exception, e:
+            raise SignifyError(e)
 
         if kdfrounds == 0:
             xorkey = '\x00' * 64
@@ -61,24 +67,30 @@ class Signify(object):
         return priv, keynum, extracted_comment
 
     def _parse_public_key(self, blob):
-        comment, b64 = blob.split('\n', 1)
+        try:
+            comment, b64 = blob.split('\n', 1)
 
-        buf = base64.b64decode(b64)
-        pkalg, keynum, pubkey = \
-            struct.unpack('!2s8s32s', buf)
+            buf = base64.b64decode(b64)
+            pkalg, keynum, pubkey = \
+                struct.unpack('!2s8s32s', buf)
 
-        assert pkalg == 'Ed'
+            assert pkalg == 'Ed'
+        except Exception, e:
+            raise SignifyError('malformed public key')
 
         return pubkey, keynum
 
     def _parse_sigfile(self, blob):
-        comment, b64 = blob.split('\n', 1)
+        try:
+            comment, b64 = blob.split('\n', 1)
 
-        buf = base64.b64decode(b64)
-        pkalg, keynum, sig = \
-            struct.unpack('!2s8s64s', buf)
+            buf = base64.b64decode(b64)
+            pkalg, keynum, sig = \
+                struct.unpack('!2s8s64s', buf)
 
-        assert pkalg == 'Ed'
+            assert pkalg == 'Ed'
+        except Exception, e:
+            raise SignifyError('malformed signature blob')
 
         return sig, keynum
 
