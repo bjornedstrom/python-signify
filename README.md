@@ -4,7 +4,7 @@
 
 [Signify](http://www.tedunangst.com/flak/post/signify) was originally written for OpenBSD to sign files and packages. This projects contains some code for working with signify keys/signatures from Python.
 
-Specifically this project contains two modules: one that uses the `subprocess` module and one that simply re-implements Signify functionality directly.
+Specifically this project contains two modules: one that uses the `subprocess` module and one that simply re-implements Signify functionality directly. There is also a driver program using the library: `signi.py`, which is similar to the normal signify program.
 
 ## Module 1: "Pure" Python version
 
@@ -48,6 +48,16 @@ Please make sure you read and understand the library docstrings before you use t
 ### Example
 
 The API is sort of similar to the one above.
+
+## Driver Program
+
+Work in progress:
+
+    $ signi.py -h
+    usage:
+        signi.py -G [-n] [-c comment] -p pubkey -s seckey
+        signi.py -S [-e] [-x sigfile] -s seckey -m message
+        signi.py -V [-eq] [-x sigfile] -p pubkey -m message
 
 ## About
 
