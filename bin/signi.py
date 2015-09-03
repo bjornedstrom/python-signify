@@ -43,17 +43,17 @@ def main():
 
         if not (args.pubkey and args.message):
             parser.error('-V require -p and -m')
-        with open(args.pubkey) as fobj:
+        with open(args.pubkey, 'rb') as fobj:
             pubkey = fobj.read()
 
         sig_filename = args.message + '.sig'
         if args.signature:
             sig_filename = args.signature
 
-        with open(sig_filename) as fobj:
+        with open(sig_filename, 'rb') as fobj:
             sig = fobj.read()
 
-        with open(args.message) as fobj:
+        with open(args.message, 'rb') as fobj:
             message = fobj.read()
 
         try:
@@ -76,7 +76,7 @@ def main():
         else:
             password1 = None
 
-        with open(args.message) as fobj:
+        with open(args.message, 'rb') as fobj:
             message = fobj.read()
             sig = signify.Signify().sign_simple(seckey, password1, message)
 
@@ -84,7 +84,7 @@ def main():
         if args.signature:
             output_filename = args.signature
 
-        with file(output_filename, 'w') as fobj:
+        with open(output_filename, 'wb') as fobj:
             fobj.write(sig)
             if args.embed:
                 fobj.write(message)
@@ -103,9 +103,9 @@ def main():
                 parser.error('passwords do not match')
 
         pub, priv = signify.Signify().generate(args.comment, password1)
-        with open(args.pubkey, 'w') as fobj:
+        with open(args.pubkey, 'wb') as fobj:
             fobj.write(pub)
-        with open(args.seckey, 'w') as fobj:
+        with open(args.seckey, 'wb') as fobj:
             fobj.write(priv)
 
 

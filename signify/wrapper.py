@@ -91,9 +91,9 @@ class Signify(object):
                 password,
                 comment)
 
-            with open(pubkey_fobj.name, 'r') as fobj:
+            with open(pubkey_fobj.name, 'rb') as fobj:
                 pub = fobj.read()
-            with open(privkey_fobj.name, 'r') as fobj:
+            with open(privkey_fobj.name, 'rb') as fobj:
                 priv = fobj.read()
 
             os.unlink(pubkey_fobj.name)
@@ -187,7 +187,7 @@ class Signify(object):
                 if kwargs.get('sig_path', None):
                     return True
                 else:
-                    with open(sig_fobj.name, 'r') as fobj:
+                    with open(sig_fobj.name, 'rb') as fobj:
                         return fobj.read()
 
             finally:
