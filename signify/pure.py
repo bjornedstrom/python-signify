@@ -24,6 +24,8 @@ class InvalidSignature(SignifyError):
 if sys.version_info.major == 3:
     def xorbuf(buf1, buf2):
         return bytes(x ^ y for x, y in zip(buf1, buf2))
+
+    unicode = str
 else:
     def xorbuf(buf1, buf2):
         res = []
@@ -33,12 +35,16 @@ else:
 
 
 def write_message(comment, blob):
-    return 'untrusted comment: %s\n%s\n' % (comment, base64.b64encode(blob).decode('utf-8'))
+    assert isinstance(comment, (str, unicode))
+    assert isinstance(blob, bytes)
+    return b'untrusted comment: ' + comment.encode('utf-8') + b'\n' + base64.b64encode(blob) + b'\n'
 
 
 def read_message(msg):
+    assert isinstance(msg, bytes)
+
     try:
-        comment_line, b64 = msg.split('\n', 1)
+        comment_line, b64 = msg.split(b'\n', 1)
     except:
         raise SignifyError('malformed message')
 
@@ -48,7 +54,7 @@ def read_message(msg):
         raise SignifyError('malformed message: base64 error')
 
     try:
-        comment = re.findall(r'^untrusted comment: (.*?)$', comment_line)[0]
+        comment = re.findall(r'^untrusted comment: (.*?)$', comment_line.decode('utf-8'))[0]
     except:
         raise SignifyError('malformed message: expected a comment line')
 
@@ -113,6 +119,8 @@ class Signify(object):
     def is_password_protected(self, priv):
         """Check if the private key is protected with a password."""
 
+        assert isinstance(priv, bytes)
+
         comment, blob = read_message(priv)
 
         try:
@@ -130,6 +138,8 @@ class Signify(object):
 
         This is dangerous and be careful.
         """
+
+        assert isinstance(pubkey, bytes)
 
         key, keynum = self._parse_public_key(pubkey)
         return key
@@ -149,6 +159,9 @@ class Signify(object):
 
         See generate() for documentation.
         """
+
+        assert isinstance(raw_pub, bytes)
+        assert isinstance(raw_priv, bytes)
 
         if comment is None:
             comment = 'signify'
@@ -183,10 +196,13 @@ class Signify(object):
         @param comment: A comment to name the keypair, or None.
         @param password: A password to protect the private key, or None.
         """
+        assert isinstance(comment, (type(None), str, unicode))
+        #assert isinstance(password, bytes)
+
         sk, vk = ed25519.keys.create_keypair()
         return self.generate_from_raw(comment, password, vk.to_bytes(), sk.to_bytes())
 
-    def sign_simple(self, priv, password, message):
+    def sign_simple(self, priv, password, message, embed=False):
         """Sign message with the private key.
 
         @param priv: private key blob
@@ -194,13 +210,29 @@ class Signify(object):
         @param message: The message to be signed.
         """
 
+        assert isinstance(priv, bytes)
+        assert isinstance(message, bytes)
+
         priv_buf, priv_keynum, comment = self._decrypt_secret_key(priv, password)
         key_obj = ed25519.keys.SigningKey(priv_buf)
 
         sig_buf = key_obj.sign(message)
 
         sig_blob = b'Ed' + priv_keynum + sig_buf
-        return write_message('signature from %s' % (comment,), sig_blob)
+
+        sig = write_message('signature from %s' % (comment,), sig_blob)
+        if embed:
+            sig += message
+        return sig
+
+    def verify_embedded(self, pubkey, embedded_sig):
+        assert isinstance(pubkey, bytes)
+        assert isinstance(embedded_sig, bytes)
+
+        sig1, sig2, message = embedded_sig.split(b'\n', 2)
+        sig = sig1 + b'\n' + sig2 + b'\n'
+
+        return self.verify_simple(pubkey, sig, message)
 
     def verify_simple(self, pubkey, sig, message):
         """Perform signature verification.
@@ -211,6 +243,10 @@ class Signify(object):
         @param sig: The signature blob.
         @param message: The message that was signed.
         """
+
+        assert isinstance(pubkey, bytes)
+        assert isinstance(sig, bytes)
+        assert isinstance(message, bytes)
 
         sig_buf, sig_keynum = self._parse_sigfile(sig)
         pub_buf, pub_keynum = self._parse_public_key(pubkey)
