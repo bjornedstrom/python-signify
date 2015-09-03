@@ -4,6 +4,7 @@
 
 import argparse
 import getpass
+import sys
 import signify.pure as signify
 
 
@@ -12,17 +13,24 @@ def one(*args):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(usage="""
+    %(prog)s -G [-n] [-c comment] -p pubkey -s seckey
+    %(prog)s -S [-e] [-x sigfile] -s seckey -m message
+    %(prog)s -V [-eq] [-x sigfile] -p pubkey -m message""")
+
     parser.add_argument('-V', '--verify', action='store_true', help='verify')
     parser.add_argument('-S', '--sign', action='store_true', help='sign')
     parser.add_argument('-G', '--generate', action='store_true', help='generate')
 
-    parser.add_argument('-p', '--pubkey', help='pubkey')
-    parser.add_argument('-s', '--seckey', help='seckey')
-    parser.add_argument('-m', '--message', help='message')
-    parser.add_argument('-x', '--signature', help='message')
+    parser.add_argument('-p', '--pubkey', help='pubkey file')
+    parser.add_argument('-s', '--seckey', help='seckey file')
+    parser.add_argument('-m', '--message', help='message file')
+    parser.add_argument('-x', '--signature', help='signature file')
 
-    parser.add_argument('-n', '--nopass', action='store_true', help='nopass')
+    parser.add_argument('-e', '--embed', action='store_true', help='embed signature')
+    parser.add_argument('-q', '--quiet', action='store_true', help='quiet mode')
+
+    parser.add_argument('-n', '--nopass', action='store_true', help='do not password protect')
     parser.add_argument('-c', '--comment', help='comment')
     args = parser.parse_args()
 
@@ -30,16 +38,42 @@ def main():
         parser.error('only one of -V, -S, -G can be given at the same time')
 
     if args.verify:
-        raise NotImplementedError('verify')
+        if args.embed:
+            raise NotImplementedError('TODO: Verify embedded signatures')
+
+        if not (args.pubkey and args.message):
+            parser.error('-V require -p and -m')
+        with open(args.pubkey) as fobj:
+            pubkey = fobj.read()
+
+        sig_filename = args.message + '.sig'
+        if args.signature:
+            sig_filename = args.signature
+
+        with open(sig_filename) as fobj:
+            sig = fobj.read()
+
+        with open(args.message) as fobj:
+            message = fobj.read()
+
+        try:
+            signify.Signify().verify_simple(pubkey, sig, message)
+            if not args.quiet:
+                print('Signature Verified')
+        except signify.InvalidSignature as e:
+            if not args.quiet:
+                print('signify: verification failed')
+            sys.exit(1)
+
     elif args.sign:
         if not (args.seckey and args.message):
             parser.error('-S require -s and -m')
         with open(args.seckey) as fobj:
             seckey = fobj.read()
 
-        # TODO: Check if the key needs a password
-        password1 = getpass.getpass()
-        if password1 == '':
+        if signify.Signify().is_password_protected(seckey):
+            password1 = getpass.getpass()
+        else:
             password1 = None
 
         with open(args.message) as fobj:
@@ -52,6 +86,9 @@ def main():
 
         with file(output_filename, 'w') as fobj:
             fobj.write(sig)
+            if args.embed:
+                fobj.write(message)
+
     elif args.generate:
         if not (args.pubkey and args.seckey):
             parser.error('-G require -p and -s')

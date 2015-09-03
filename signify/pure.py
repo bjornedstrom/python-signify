@@ -110,6 +110,21 @@ class Signify(object):
 
         return sig, keynum
 
+    def is_password_protected(self, priv):
+        """Check if the private key is protected with a password."""
+
+        comment, blob = read_message(priv)
+
+        try:
+            pkalg, kdfalg, kdfrounds = \
+                struct.unpack(b'!2s2sL', blob[0:8])
+
+            assert pkalg == b'Ed'
+            assert kdfalg == b'BK'
+            return kdfrounds != 0
+        except Exception as e:
+            raise SignifyError(e)
+
     def extract_raw_public_key(self, pubkey):
         """ADVANCED: Given a Signify public key, return the raw ed25519 key.
 
