@@ -8,34 +8,31 @@ import sys
 import signify.pure as signify
 
 
-def one(*args):
-    return 1 == len(list(arg for arg in args if arg))
-
-
 def main():
     parser = argparse.ArgumentParser(usage="""
+    %(prog)s -C [-q] -p pubkey -x sigfile [file ...]
     %(prog)s -G [-n] [-c comment] -p pubkey -s seckey
     %(prog)s -S [-e] [-x sigfile] -s seckey -m message
     %(prog)s -V [-eq] [-x sigfile] -p pubkey -m message""")
 
-    parser.add_argument('-V', '--verify', action='store_true', help='verify')
-    parser.add_argument('-S', '--sign', action='store_true', help='sign')
-    parser.add_argument('-G', '--generate', action='store_true', help='generate')
+    action_group = parser.add_mutually_exclusive_group(required=True)
+    action_group.add_argument('-V', '--verify', action='store_true', help='verify')
+    action_group.add_argument('-S', '--sign', action='store_true', help='sign')
+    action_group.add_argument('-G', '--generate', action='store_true', help='generate')
+    action_group.add_argument('-C', '--check', action='store_true', help='check signed openbsd sha256(1)')
 
     parser.add_argument('-p', '--pubkey', help='pubkey file')
     parser.add_argument('-s', '--seckey', help='seckey file')
     parser.add_argument('-m', '--message', help='message file')
     parser.add_argument('-x', '--signature', help='signature file')
 
-    parser.add_argument('-e', '--embed', action='store_true', help='embed signature')
-    parser.add_argument('-q', '--quiet', action='store_true', help='quiet mode')
+    misc_group = parser.add_argument_group('misc')
+    misc_group.add_argument('-e', '--embed', action='store_true', help='embed signature')
+    misc_group.add_argument('-q', '--quiet', action='store_true', help='quiet mode')
 
-    parser.add_argument('-n', '--nopass', action='store_true', help='do not password protect')
-    parser.add_argument('-c', '--comment', help='comment')
+    misc_group.add_argument('-n', '--nopass', action='store_true', help='do not password protect')
+    misc_group.add_argument('-c', '--comment', help='comment')
     args = parser.parse_args()
-
-    if not one(args.verify, args.sign, args.generate):
-        parser.error('only one of -V, -S, -G can be given at the same time')
 
     if args.verify:
         if not (args.pubkey and args.message):
@@ -71,10 +68,13 @@ def main():
                 print('signify: verification failed')
             sys.exit(1)
 
+    elif args.check:
+        raise NotImplementedError('-C is the least portable signify option since it assumes OpenBSD sha256(1) output')
+
     elif args.sign:
         if not (args.seckey and args.message):
             parser.error('-S require -s and -m')
-        with open(args.seckey) as fobj:
+        with open(args.seckey, 'rb') as fobj:
             seckey = fobj.read()
 
         if signify.Signify().is_password_protected(seckey):
