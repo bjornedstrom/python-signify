@@ -38,26 +38,32 @@ def main():
         parser.error('only one of -V, -S, -G can be given at the same time')
 
     if args.verify:
-        if args.embed:
-            raise NotImplementedError('TODO: Verify embedded signatures')
-
         if not (args.pubkey and args.message):
             parser.error('-V require -p and -m')
         with open(args.pubkey, 'rb') as fobj:
             pubkey = fobj.read()
 
-        sig_filename = args.message + '.sig'
-        if args.signature:
-            sig_filename = args.signature
+        if args.embed:
+            if args.signature:
+                parser.error('-e and -x are mutually exclusive')
 
-        with open(sig_filename, 'rb') as fobj:
-            sig = fobj.read()
+            sig = None
+        else:
+            sig_filename = args.message + '.sig'
+            if args.signature:
+                sig_filename = args.signature
+
+            with open(sig_filename, 'rb') as fobj:
+                sig = fobj.read()
 
         with open(args.message, 'rb') as fobj:
             message = fobj.read()
 
         try:
-            signify.Signify().verify_simple(pubkey, sig, message)
+            if args.embed:
+                signify.Signify().verify_embedded(pubkey, message)
+            else:
+                signify.Signify().verify_simple(pubkey, sig, message)
             if not args.quiet:
                 print('Signature Verified')
         except signify.InvalidSignature as e:
