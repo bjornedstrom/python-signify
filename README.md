@@ -15,25 +15,23 @@ The `signify.pure` module has a Python implementation of some parts of `signify`
 - [python-ed25519](https://github.com/warner/python-ed25519]) (`pip install ed25519`)
 - [py-bcrypt](py-bcrypt) (`pip install py-bcrypt`)
 
-### Example (Python 2)
+### Example
 
 ```python
 from signify.pure import Signify
 
-pubkey = """untrusted comment: bjorntest public key
+pubkey = b"""untrusted comment: bjorntest public key
 RWQ100QRGZoxU+Oy1g7Ko+8LjK1AQLIEavp/NuL54An1DC0U2cfCLKEl
 """
 
-signature = """untrusted comment: signature from bjorntest secret key
+signature = b"""untrusted comment: signature from bjorntest secret key
 RWQ100QRGZoxU/gjzE8m6GYtfICqE0Ap8SdXRSHrpjnSBKMc2RMalgi5RKrEHmKfTmcsuB9ZzDCo6K6sYEqaEcEnnAFa0zCewAg=
 """
 
-message = """my message
+message = b"""my message
 """
 
-print Signify().verify_simple(pubkey, signature, message)
-broken_sig = signature.replace('Malgi', 'Magic')
-print Signify().verify_simple(pubkey, broken_sig, message)
+print(Signify().verify_simple(pubkey, signature, message))
 ```
 
 ## Module 2: Subprocess based wrapper around signify(1)
