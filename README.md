@@ -15,7 +15,7 @@ The `signify.pure` module has a Python implementation of some parts of `signify`
 - [python-ed25519](https://github.com/warner/python-ed25519]) (`pip install ed25519`)
 - [py-bcrypt](py-bcrypt) (`pip install py-bcrypt`)
 
-### Example
+### API Example
 
 ```python
 import signify.pure as signify
@@ -32,20 +32,25 @@ message = b"""my message
 """
 
 print(signify.verify(pubkey, signature, message))
+
+new_pub, new_sec = signify.generate('my new key', 'password')
+new_sig = signify.sign(new_sec.unprotect('password'), message)
+print(new_sig.to_bytes())
+print(signify.verify(new_pub, new_sig, message))
 ```
 
 ## Module 2: Subprocess based wrapper around signify(1)
 
-This is a fairly simple (subprocess based) wrapper around the OpenBSD signify(1) command. It basically does two things for you to make your life a little bit easier:
+`signify.wrapper` is a fairly simple (subprocess based) wrapper around the OpenBSD signify(1) command. It basically does two things for you to make your life a little bit easier:
 
 - It handles thread safety and the actual calling of subprocess, which is easy to screw up.
 - For convenience it will aid you in juggling temporary files in case you want to work with strings/buffers instead of paths, as signify(1) work on paths.
 
 Please make sure you read and understand the library docstrings before you use the code. There are some security considerations.
 
-### Example
+### API
 
-The API is sort of similar to the one above.
+The wrapper API is a little bit different from the pure API. Please consult the docstrings for more information.
 
 ## Driver Program
 
