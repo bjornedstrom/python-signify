@@ -2,6 +2,8 @@
 
 0.1.0-RC1
 
+[![Build Status](https://travis-ci.org/bjornedstrom/python-signify.png?branch=master)](https://travis-ci.org/bjornedstrom/python-signify)
+
 [Signify](http://www.tedunangst.com/flak/post/signify) was originally written for OpenBSD to sign files and packages, as a light-weight replacement for using PGP. python-signify contains some code for working with signify keys/signatures from Python. The module allow you to sign, verify and generate keypairs.
 
 Specifically this project contains two modules that you can use depending on preference: the first one re-implements Signify functionality directly. The second one uses the `subprocess` module and depends on the `signify` binary.
