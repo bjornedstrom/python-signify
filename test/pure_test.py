@@ -36,87 +36,89 @@ my message
     def test_extraction(self):
         self.assertEquals(
             b'\xe3\xb2\xd6\x0e\xca\xa3\xef\x0b\x8c\xad@@\xb2\x04j\xfa\x7f6\xe2\xf9\xe0\t\xf5\x0c-\x14\xd9\xc7\xc2,\xa1%',
-            self.obj.extract_raw_public_key(self.KAT[0]['pub']))
+            signify.PublicKey.from_bytes(self.KAT[0]['pub']).raw())
 
+        sk = signify.SecretKey.from_bytes(self.KAT[0]['priv'])
+        sku = sk.unprotect('test')
         self.assertEquals(
             b'D@\xd9\xca\xb2\x96;\xa0^\xbb\x16\xc8\x0f\xf7Y=(hu\x85\xbd\xe4i\xf6\xcf\x0f\xfb#\xc1\xfa\xe0\xa1\xe3\xb2\xd6\x0e\xca\xa3\xef\x0b\x8c\xad@@\xb2\x04j\xfa\x7f6\xe2\xf9\xe0\t\xf5\x0c-\x14\xd9\xc7\xc2,\xa1%',
-            self.obj.extract_raw_private_key(self.KAT[0]['priv'], 'test'))
+            sku.raw_secret_key())
 
     def test_verify_success(self):
         self.assertTrue(
-            self.obj.verify_simple(self.KAT[0]['pub'],
-                                   self.KAT[0]['sig'],
-                                   self.KAT[0]['message']))
+            signify.verify(signify.PublicKey.from_bytes(self.KAT[0]['pub']),
+                           signify.Signature.from_bytes(self.KAT[0]['sig']),
+                           self.KAT[0]['message']))
 
     def test_sign(self):
-        sig = self.obj.sign_simple(self.KAT[0]['priv'],
-                                   'test',
-                                   self.KAT[0]['message'])
+        sk = signify.SecretKey.from_bytes(self.KAT[0]['priv'])
+        sku = sk.unprotect('test')
+        sig = signify.sign(sku,
+                           self.KAT[0]['message'])
 
-        self.assertEquals(self.KAT[0]['sig'], sig)
+        self.assertEquals(self.KAT[0]['sig'], sig.to_bytes())
 
     def test_sign_embedded(self):
-        sig = self.obj.sign_simple(self.KAT[0]['priv'],
-                                   'test',
-                                   self.KAT[0]['message'],
-                                   True)
+        sk = signify.SecretKey.from_bytes(self.KAT[0]['priv'])
+        sku = sk.unprotect('test')
+        sig = signify.sign(sku,
+                           self.KAT[0]['message'],
+                           True)
 
-        self.assertEquals(self.KAT[0]['embedded'], sig)
+        self.assertEquals(self.KAT[0]['embedded'], sig.to_bytes())
 
     def test_verify_embedded(self):
         self.assertTrue(
-            self.obj.verify_embedded(self.KAT[0]['pub'],
-                                     self.KAT[0]['embedded']))
+            signify.verify_embedded(signify.PublicKey.from_bytes(self.KAT[0]['pub']),
+                                    self.KAT[0]['embedded']))
 
     def test_decrypt_secret_wrong_password(self):
         self.assertRaises(KeyError,
-                          self.obj.sign_simple,
-                          self.KAT[0]['priv'],
-                          'wrong password',
-                          self.KAT[0]['message'])
+                          signify.SecretKey.from_bytes(self.KAT[0]['priv']).unprotect,
+                          'wrongpassword')
 
     def test_verify_failure(self):
         self.assertRaises(
             signify.InvalidSignature,
-            self.obj.verify_simple, self.KAT[0]['pub'],
-                                    self.KAT[0]['brokensig'],
-                                    self.KAT[0]['message'])
+            signify.verify, signify.PublicKey.from_bytes(self.KAT[0]['pub']),
+                            signify.Signature.from_bytes(self.KAT[0]['brokensig']),
+                            self.KAT[0]['message'])
 
     def test_generate_sign_no_password(self):
-        pub, priv = self.obj.generate('test', None)
+        pub, priv = signify.generate('test', None)
 
-        self.assertTrue(pub.startswith(b'untrusted comment: test public key'))
-        self.assertTrue(priv.startswith(b'untrusted comment: test secret key'))
+        self.assertTrue(pub.to_bytes().startswith(b'untrusted comment: test public key'))
+        self.assertTrue(priv.to_bytes().startswith(b'untrusted comment: test secret key'))
 
-        sig = self.obj.sign_simple(priv,
-                                   None,
-                                   b'My Message')
+        sku = priv.unprotect(None)
+        sig = signify.sign(sku,
+                           b'My Message')
 
         self.assertTrue(
-            self.obj.verify_simple(pub,
-                                   sig,
-                                   b'My Message'))
+            signify.verify(pub,
+                           sig,
+                           b'My Message'))
 
     def test_generate_no_comment(self):
-        pub, priv = self.obj.generate(None, None)
+        pub, priv = signify.generate(None, None)
 
-        self.assertTrue(pub.startswith(b'untrusted comment: signify public key'))
-        self.assertTrue(priv.startswith(b'untrusted comment: signify secret key'))
+        self.assertTrue(pub.to_bytes().startswith(b'untrusted comment: signify public key'))
+        self.assertTrue(priv.to_bytes().startswith(b'untrusted comment: signify secret key'))
 
     def test_generate_sign_with_password(self):
-        pub, priv = self.obj.generate(None, 'testpassword')
+        pub, priv = signify.generate(None, 'testpassword')
 
-        self.assertTrue(pub.startswith(b'untrusted comment: signify public key'))
-        self.assertTrue(priv.startswith(b'untrusted comment: signify secret key'))
+        self.assertTrue(pub.to_bytes().startswith(b'untrusted comment: signify public key'))
+        self.assertTrue(priv.to_bytes().startswith(b'untrusted comment: signify secret key'))
 
-        sig = self.obj.sign_simple(priv,
-                                   'testpassword',
-                                   b'My Message')
+        sku = priv.unprotect('testpassword')
+        sig = signify.sign(sku,
+                           b'My Message')
 
         self.assertTrue(
-            self.obj.verify_simple(pub,
-                                   sig,
-                                   b'My Message'))
+            signify.verify(pub,
+                           sig,
+                           b'My Message'))
 
 
 if __name__ == '__main__':
