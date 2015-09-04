@@ -106,6 +106,9 @@ class Signature(Materialized):
         obj._blob = blob
         return obj
 
+    def __repr__(self):
+        return '<Signature by %s>' % (self._keynum.encode('hex'))
+
 
 class PublicKey(Materialized):
     def __init__(self):
@@ -319,93 +322,3 @@ def generate(comment, password):
 
     sk, vk = ed25519.keys.create_keypair()
     return generate_from_raw(comment, password, vk.to_bytes(), sk.to_bytes())
-
-
-class Signify(object):
-    def __init__(self):
-        pass
-
-    def is_password_protected(self, priv):
-        """Check if the private key is protected with a password."""
-
-        sk = SecretKey.from_bytes(priv)
-        return sk.is_password_protected()
-
-    def extract_raw_public_key(self, pubkey):
-        """ADVANCED: Given a Signify public key, return the raw ed25519 key.
-
-        This is dangerous and be careful.
-        """
-
-        pk = PublicKey.from_bytes(pubkey)
-        return pk.raw()
-
-    def extract_raw_private_key(self, privkey, password):
-        """ADVANCED: Given a Signify private key, return the raw ed25519 key.
-
-        This is dangerous so be careful.
-        """
-
-        sk = SecretKey.from_bytes(privkey)
-        sku = sk.unprotect(password)
-        return sku.raw_secret_key()
-
-    def generate_from_raw(self, comment, password, raw_pub, raw_priv):
-        """ADVANCED: Given a raw Ed25519 key pair raw_pub and raw_priv,
-        create a Signify keypair.
-
-        See generate() for documentation.
-        """
-
-        pk, sk = generate_from_raw(comment, password, raw_pub, raw_priv)
-
-        return pk.to_bytes(), sk.to_bytes()
-
-    def generate(self, comment, password):
-        """Generate a signify keypair.
-
-        @param comment: A comment to name the keypair, or None.
-        @param password: A password to protect the private key, or None.
-        """
-
-        pk, sk = generate(comment, password)
-        return pk.to_bytes(), sk.to_bytes()
-
-    def sign_simple(self, priv, password, message, embed=False):
-        """Sign message with the private key.
-
-        @param priv: private key blob
-        @param password: The password that protects the private key, or None.
-        @param message: The message to be signed.
-        """
-
-        sk = SecretKey.from_bytes(priv)
-        sku = sk.unprotect(password)
-        return sign(sku, message, embed).to_bytes()
-
-    def verify_embedded(self, pubkey, embedded_msg):
-        assert isinstance(pubkey, bytes)
-        assert isinstance(embedded_msg, bytes)
-
-        pk = PublicKey.from_bytes(pubkey)
-
-        return verify_embedded(pk, embedded_msg)
-
-    def verify_simple(self, pubkey, sig, message):
-        """Perform signature verification.
-
-        throws InvalidSignature on error.
-
-        @param pubkey: The public key to verify against.
-        @param sig: The signature blob.
-        @param message: The message that was signed.
-        """
-
-        assert isinstance(pubkey, bytes)
-        assert isinstance(sig, bytes)
-        assert isinstance(message, bytes)
-
-        sig = Signature.from_bytes(sig)
-        pk = PublicKey.from_bytes(pubkey)
-
-        return verify(pk, sig, message)

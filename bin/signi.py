@@ -38,7 +38,7 @@ def main():
         if not (args.pubkey and args.message):
             parser.error('-V require -p and -m')
         with open(args.pubkey, 'rb') as fobj:
-            pubkey = fobj.read()
+            pubkey = signify.PublicKey.from_bytes(fobj.read())
 
         if args.embed:
             if args.signature:
@@ -51,16 +51,16 @@ def main():
                 sig_filename = args.signature
 
             with open(sig_filename, 'rb') as fobj:
-                sig = fobj.read()
+                sig = signify.Signature.from_bytes(fobj.read())
 
         with open(args.message, 'rb') as fobj:
             message = fobj.read()
 
         try:
             if args.embed:
-                signify.Signify().verify_embedded(pubkey, message)
+                signify.verify_embedded(pubkey, message)
             else:
-                signify.Signify().verify_simple(pubkey, sig, message)
+                signify.verify(pubkey, sig, message)
             if not args.quiet:
                 print('Signature Verified')
         except signify.InvalidSignature as e:
@@ -75,23 +75,26 @@ def main():
         if not (args.seckey and args.message):
             parser.error('-S require -s and -m')
         with open(args.seckey, 'rb') as fobj:
-            seckey = fobj.read()
+            seckey = signify.SecretKey.from_bytes(fobj.read())
 
-        if signify.Signify().is_password_protected(seckey):
+        if seckey.is_password_protected():
             password1 = getpass.getpass()
         else:
             password1 = None
 
+        sku = seckey.unprotect(password1)
+
         with open(args.message, 'rb') as fobj:
             message = fobj.read()
-            sig = signify.Signify().sign_simple(seckey, password1, message)
+
+        sig = signify.sign(sku, message)
 
         output_filename = args.message + '.sig'
         if args.signature:
             output_filename = args.signature
 
         with open(output_filename, 'wb') as fobj:
-            fobj.write(sig)
+            fobj.write(sig.to_bytes())
             if args.embed:
                 fobj.write(message)
 
@@ -108,11 +111,11 @@ def main():
             if password1 != password2:
                 parser.error('passwords do not match')
 
-        pub, priv = signify.Signify().generate(args.comment, password1)
+        pub, priv = signify.generate(args.comment, password1)
         with open(args.pubkey, 'wb') as fobj:
-            fobj.write(pub)
+            fobj.write(pub.to_bytes())
         with open(args.seckey, 'wb') as fobj:
-            fobj.write(priv)
+            fobj.write(priv.to_bytes())
 
 
 if __name__ == '__main__':
