@@ -1,6 +1,6 @@
 # python-signify - OpenBSD Signify for Python
 
-0.0.0-DEVEL
+0.1.0-RC1
 
 [Signify](http://www.tedunangst.com/flak/post/signify) was originally written for OpenBSD to sign files and packages. This projects contains some code for working with signify keys/signatures from Python.
 
