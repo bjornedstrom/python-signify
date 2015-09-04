@@ -30,9 +30,6 @@ my message
             }
         ]
 
-    def setUp(self):
-        self.obj = signify.Signify()
-
     def test_extraction(self):
         self.assertEquals(
             b'\xe3\xb2\xd6\x0e\xca\xa3\xef\x0b\x8c\xad@@\xb2\x04j\xfa\x7f6\xe2\xf9\xe0\t\xf5\x0c-\x14\xd9\xc7\xc2,\xa1%',

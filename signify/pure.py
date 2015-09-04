@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Björn Edström <be@bjrn.se> 2015. See LICENSE for details.
 
-# WORK IN PROGRESS
-
 import base64
 import bcrypt
 import ed25519
@@ -34,34 +32,7 @@ else:
         return ''.join(res)
 
 
-def write_message(comment, blob):
-    assert isinstance(comment, (str, unicode))
-    assert isinstance(blob, bytes)
-    return b'untrusted comment: ' + comment.encode('utf-8') + b'\n' + base64.b64encode(blob) + b'\n'
-
-
-def read_message(msg):
-    assert isinstance(msg, bytes)
-
-    try:
-        comment_line, b64 = msg.split(b'\n', 1)
-    except:
-        raise SignifyError('malformed message')
-
-    try:
-        blob = base64.b64decode(b64)
-    except:
-        raise SignifyError('malformed message: base64 error')
-
-    try:
-        comment = re.findall(r'^untrusted comment: (.*?)$', comment_line.decode('utf-8'))[0]
-    except:
-        raise SignifyError('malformed message: expected a comment line')
-
-    return (comment, bytes(blob))
-
-
-class Materialized(object):
+class _Materialized(object):
     def __init__(self):
         self._blob = None
         self._comment = None
@@ -80,13 +51,42 @@ class Materialized(object):
     def to_bytes(self):
         return self._blob
 
+    @staticmethod
+    def write_message(comment, blob):
+        assert isinstance(comment, (str, unicode))
+        assert isinstance(blob, bytes)
+        return b'untrusted comment: ' + comment.encode('utf-8') + b'\n' + base64.b64encode(blob) + b'\n'
 
-class Signature(Materialized):
+    @staticmethod
+    def read_message(msg):
+        assert isinstance(msg, bytes)
+
+        try:
+            comment_line, b64 = msg.split(b'\n', 1)
+        except:
+            raise SignifyError('malformed message')
+
+        try:
+            blob = base64.b64decode(b64)
+        except:
+            raise SignifyError('malformed message: base64 error')
+
+        try:
+            comment = re.findall(r'^untrusted comment: (.*?)$', comment_line.decode('utf-8'))[0]
+        except:
+            raise SignifyError('malformed message: expected a comment line')
+
+        return (comment, bytes(blob))
+
+
+class Signature(_Materialized):
+    """A Signature object."""
+
     def __init__(self):
-        Materialized.__init__(self)
+        _Materialized.__init__(self)
 
     def _parse_sigfile(self, msg):
-        self._comment, blob = read_message(msg)
+        self._comment, blob = _Materialized.read_message(msg)
 
         try:
             pkalg, keynum, sig = \
@@ -110,12 +110,14 @@ class Signature(Materialized):
         return '<Signature by %s>' % (self._keynum.encode('hex'))
 
 
-class PublicKey(Materialized):
+class PublicKey(_Materialized):
+    """A Signify public key."""
+
     def __init__(self):
-        Materialized.__init__(self)
+        _Materialized.__init__(self)
 
     def _parse_public_key(self, msg):
-        self._comment, blob = read_message(msg)
+        self._comment, blob = _Materialized.read_message(msg)
 
         try:
             pkalg, keynum, pubkey = \
@@ -140,6 +142,9 @@ class PublicKey(Materialized):
 
 
 class UnprotectedSecretKey(object):
+    """This class represents a decrypted secret key that can be used for
+    signing operations."""
+
     def __init__(self, sk):
         assert isinstance(sk, SecretKey)
         self._sk = sk
@@ -155,9 +160,11 @@ class UnprotectedSecretKey(object):
         return self._key
 
 
-class SecretKey(Materialized):
+class SecretKey(_Materialized):
+    """A Signify secret key object."""
+
     def __init__(self):
-        Materialized.__init__(self)
+        _Materialized.__init__(self)
 
     @staticmethod
     def from_bytes(blob):
@@ -168,7 +175,7 @@ class SecretKey(Materialized):
         return obj
 
     def _parse_secret_key(self, msg):
-        comment, blob = read_message(msg)
+        comment, blob = _Materialized.read_message(msg)
 
         try:
             pkalg, kdfalg, kdfrounds, salt, checksum, keynum, seckey = \
@@ -188,12 +195,20 @@ class SecretKey(Materialized):
         self._comment = comment
 
     def is_password_protected(self):
+        """Returns True if this secret key is protected with a password."""
+
         return self._kdfrounds != 0
 
     def raw(self):
         raise NotImplementedError('call unprotect()')
 
     def unprotect(self, password):
+        """Decrypt the SecretKey object and return an UnprotectedSecretKey
+        that can be used for signing.
+
+        Can throw KeyError if the password is incorrect.
+        """
+
         if self._kdfrounds == 0:
             xorkey = b'\x00' * 64
         else:
@@ -229,7 +244,7 @@ def sign(secret_key, message, embed=False):
 
     sig_blob = b'Ed' + secret_key.keynum() + sig_buf
 
-    sig = write_message('signature from %s' % (secret_key.comment(),), sig_blob)
+    sig = _Materialized.write_message('signature from %s' % (secret_key.comment(),), sig_blob)
     if embed:
         sig += message
     return Signature.from_bytes(sig)
@@ -302,11 +317,11 @@ def generate_from_raw(comment, password, raw_pub, raw_priv):
 
     priv_blob = b'Ed' + b'BK' + struct.pack('!L', kdfrounds) + \
                 salt + checksum + keynum + protected_key
-    priv = write_message('%s secret key' % (comment,), priv_blob)
+    priv = _Materialized.write_message('%s secret key' % (comment,), priv_blob)
 
     # public key
     pub_blob = b'Ed' + keynum + raw_pub
-    pub = write_message('%s public key' % (comment,), pub_blob)
+    pub = _Materialized.write_message('%s public key' % (comment,), pub_blob)
 
     return PublicKey.from_bytes(pub), SecretKey.from_bytes(priv)
 
@@ -317,6 +332,7 @@ def generate(comment, password):
     @param comment: A comment to name the keypair, or None.
     @param password: A password to protect the private key, or None.
     """
+
     assert isinstance(comment, (type(None), str, unicode))
     #assert isinstance(password, bytes)
 
