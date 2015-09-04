@@ -18,20 +18,20 @@ The `signify.pure` module has a Python implementation of some parts of `signify`
 ### Example
 
 ```python
-from signify.pure import Signify
+import signify.pure as signify
 
-pubkey = b"""untrusted comment: bjorntest public key
+pubkey = signify.PublicKey.from_bytes(b"""untrusted comment: bjorntest public key
 RWQ100QRGZoxU+Oy1g7Ko+8LjK1AQLIEavp/NuL54An1DC0U2cfCLKEl
-"""
+""")
 
-signature = b"""untrusted comment: signature from bjorntest secret key
+signature = signify.Signature.from_bytes(b"""untrusted comment: signature from bjorntest secret key
 RWQ100QRGZoxU/gjzE8m6GYtfICqE0Ap8SdXRSHrpjnSBKMc2RMalgi5RKrEHmKfTmcsuB9ZzDCo6K6sYEqaEcEnnAFa0zCewAg=
-"""
+""")
 
 message = b"""my message
 """
 
-print(Signify().verify_simple(pubkey, signature, message))
+print(signify.verify(pubkey, signature, message))
 ```
 
 ## Module 2: Subprocess based wrapper around signify(1)
