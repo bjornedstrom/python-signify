@@ -2,11 +2,13 @@
 
 0.1.0-RC1
 
-[Signify](http://www.tedunangst.com/flak/post/signify) was originally written for OpenBSD to sign files and packages. This projects contains some code for working with signify keys/signatures from Python.
+[Signify](http://www.tedunangst.com/flak/post/signify) was originally written for OpenBSD to sign files and packages, as a light-weight replacement for using PGP. python-signify contains some code for working with signify keys/signatures from Python. The module allow you to sign, verify and generate keypairs.
 
-Specifically this project contains two modules: one that uses the `subprocess` module and one that simply re-implements Signify functionality directly. There is also a driver program using the library: `signi.py`, which is similar to the normal signify program.
+Specifically this project contains two modules that you can use depending on preference: the first one re-implements Signify functionality directly. The second one uses the `subprocess` module and depends on the `signify` binary.
 
-## Module 1: "Pure" Python version
+There is also a driver program using the library: `signi.py`, which is similar to the normal signify program in behavior.
+
+## Module 1: "Pure" Python version (RECOMMENDED)
 
 The `signify.pure` module has a Python implementation of some parts of `signify`, without requiring the signify binary or the subprocess module. This code requires the Python bcrypt and ed25519 modules.
 
