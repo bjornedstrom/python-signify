@@ -1,0 +1,12 @@
+language: python
+python:
+  - "2.6"
+  - "2.7"
+  - "3.3"
+  - "3.4"
+install:
+  - "pip install ed25519"
+  - "pip install py-bcrypt"
+script:
+  - python setup.py build
+  - nosetests test/pure_test.py
