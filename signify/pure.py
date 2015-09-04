@@ -80,7 +80,7 @@ class InvalidSignature(SignifyError):
     pass
 
 
-if sys.version_info.major == 3:
+if sys.version_info[0] == 3:
     def xorbuf(buf1, buf2):
         return bytes(x ^ y for x, y in zip(buf1, buf2))
 
