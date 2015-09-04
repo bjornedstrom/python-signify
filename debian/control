@@ -1,0 +1,12 @@
+Source: python-signify
+Section: utils
+Priority: extra
+Maintainer: Björn Edström <be@bjrn.se>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.3
+
+Package: python-signify
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-bcrypt
+Description: OpenBSD signify for python.
+ Python library for signify behavior.
