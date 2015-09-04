@@ -40,15 +40,18 @@ class _Materialized(object):
         self._keynum = None
 
     def comment(self):
+        """Returns the plain text comment associated with the object."""
         return self._comment
 
     def keynum(self):
+        """Returns the 8 byte identifier for the object."""
         return self._keynum
 
     def raw(self):
         return self._raw
 
     def to_bytes(self):
+        """Returns the materialized byte blob for the object."""
         return self._blob
 
     @staticmethod
