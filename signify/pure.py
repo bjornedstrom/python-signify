@@ -1,6 +1,67 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Björn Edström <be@bjrn.se> 2015. See LICENSE for details.
 
+"""Signify library
+
+This library provide a few main methods and some minor helpers:
+
+    - sign(...)
+    - verify(...)
+    - generate(...)
+
+In addition it provide 3 helper classes:
+
+    - PublicKey
+    - SecretKey
+    - Signature
+
+A signify key/signature is a byte string on the form:
+"untrusted comment: ...\\n<base64 blob>\\n"
+
+Use the {PublicKey, SecretKey, Signature}.from_bytes(...) method to
+create an object instance from a byte string of the above form. Use
+the .to_bytes() method for the opposite direction:
+
+    >>> pubkey = PublicKey.from_bytes(b'''untrusted comment: bjorntest public key
+RWQ100QRGZoxU+Oy1g7Ko+8LjK1AQLIEavp/NuL54An1DC0U2cfCLKEl
+''')
+    >>> print(pubkey.to_bytes())
+    b'untrusted...'
+    >>> # same goes for Signature and SecretKey
+
+SecretKey:s may be password protected. Use the .unprotect(...) method
+to get an UnprotectedSecretKey, which can be used by sign(...).
+
+Example
+-------
+
+    pubkey = signify.PublicKey.from_bytes(b'''untrusted comment: bjorntest public key
+    RWQ100QRGZoxU+Oy1g7Ko+8LjK1AQLIEavp/NuL54An1DC0U2cfCLKEl
+    ''')
+
+    signature = signify.Signature.from_bytes(b'''untrusted comment: signature from bjorntest secret key
+    RWQ100QRGZoxU/gjzE8m6GYtfICqE0Ap8SdXRSHrpjnSBKMc2RMalgi5RKrEHmKfTmcsuB9ZzDCo6K6sYEqaEcEnnAFa0zCewAg=
+    ''')
+
+    message = b'''my message
+    '''
+
+    print(signify.verify(pubkey, signature, message))
+
+    new_pub, new_sec = signify.generate('my new key', 'password')
+    new_sig = signify.sign(new_sec.unprotect('password'), message)
+    print(new_sig.to_bytes())
+    print(signify.verify(new_pub, new_sig, message))
+
+Security Warning
+----------------
+
+Python is an interpreted language and there are no guarantees that
+your signify secret key, ones unprotected, may end up in swap space or
+be recoverable from reading your computers memory.
+
+"""
+
 import base64
 import bcrypt
 import ed25519
