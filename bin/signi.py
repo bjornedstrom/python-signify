@@ -118,10 +118,15 @@ def main():
 
         exit_fail = False
         for path, status in check.checkfiles(os.getcwd(), message):
-            if not status:
-                exit_fail = True
-            if not args.quiet:
-                print('%s: %s' % (path, 'OK' if status else 'FAIL'))
+            if args.path:
+                include = (path in args.path)
+            else:
+                include = True
+            if include:
+                if not status:
+                    exit_fail = True
+                if not args.quiet:
+                    print('%s: %s' % (path, 'OK' if status else 'FAIL'))
 
         if exit_fail:
             sys.exit(1)
