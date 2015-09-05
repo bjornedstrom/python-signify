@@ -7,6 +7,7 @@ import getpass
 import os
 import sys
 import signify.pure as signify
+import signify.check as check
 
 
 def get_unprotected_secret_key(args):
@@ -99,7 +100,31 @@ def main():
             fobj.write(sig.to_bytes())
 
     elif args.check:
-        raise NotImplementedError('-C is the least portable signify option since it assumes OpenBSD sha256(1) output')
+        if not (args.pubkey and args.signature):
+            parser.error('-C require -p and -x')
+        with open(args.pubkey, 'rb') as fobj:
+            pubkey = signify.PublicKey.from_bytes(fobj.read())
+        with open(args.signature, 'rb') as fobj:
+            sig = signify.Signature.from_bytes(fobj.read())
+
+        try:
+            message = signify.verify_embedded(pubkey, sig)
+            if not args.quiet:
+                print('Signature Verified')
+        except signify.InvalidSignature as e:
+            if not args.quiet:
+                print('signify: verification failed')
+            sys.exit(1)
+
+        exit_fail = False
+        for path, status in check.checkfiles(os.getcwd(), message):
+            if not status:
+                exit_fail = True
+            if not args.quiet:
+                print('%s: %s' % (path, 'OK' if status else 'FAIL'))
+
+        if exit_fail:
+            sys.exit(1)
 
     elif args.sign:
         if not (args.seckey and args.message):
