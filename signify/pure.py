@@ -69,7 +69,9 @@ import hashlib
 import os
 import re
 import struct
-import sys
+
+import signify.check as check
+from signify.util import *
 
 
 class SignifyError(Exception):
@@ -79,18 +81,6 @@ class SignifyError(Exception):
 class InvalidSignature(SignifyError):
     pass
 
-
-if sys.version_info[0] == 3:
-    def xorbuf(buf1, buf2):
-        return bytes(x ^ y for x, y in zip(buf1, buf2))
-
-    unicode = str
-else:
-    def xorbuf(buf1, buf2):
-        res = []
-        for i in range(len(buf1)):
-            res.append(chr(ord(buf1[i]) ^ ord(buf2[i])))
-        return ''.join(res)
 
 
 class _Materialized(object):
@@ -171,7 +161,7 @@ class Signature(_Materialized):
         return obj
 
     def __repr__(self):
-        return '<Signature by %s>' % (self._keynum.encode('hex'))
+        return '<Signature by %s>' % (bytes2hex(self._keynum))
 
 
 class PublicKey(_Materialized):
@@ -202,7 +192,7 @@ class PublicKey(_Materialized):
         return obj
 
     def __repr__(self):
-        return '<PublicKey %s>' % (self._keynum.encode('hex'))
+        return '<PublicKey %s>' % (bytes2hex(self._keynum))
 
 
 class UnprotectedSecretKey(object):
@@ -288,7 +278,7 @@ class SecretKey(_Materialized):
         return usk
 
     def __repr__(self):
-        return '<SecretKey %s>' % (self._keynum.encode('hex'))
+        return '<SecretKey %s>' % (bytes2hex(self._keynum))
 
 
 def sign(secret_key, message, embed=False):
