@@ -82,7 +82,6 @@ class InvalidSignature(SignifyError):
     pass
 
 
-
 class _Materialized(object):
     def __init__(self):
         self._blob = None
@@ -403,3 +402,8 @@ def generate(comment, password):
 
     sk, vk = ed25519.keys.create_keypair()
     return generate_from_raw(comment, password, vk.to_bytes(), sk.to_bytes())
+
+
+def sign_files(secret_key, algo, paths, root='.'):
+    msg = check.openbsd_sha_files(algo, root, paths).encode('utf-8')
+    return sign(secret_key, msg, embed=True)
