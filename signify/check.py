@@ -29,7 +29,7 @@ def openbsd_sha_files(algo_str, root, files):
         hashobj = hash_cls()
         hash_file(hashobj, os.path.join(root, path))
         res.append('%s (%s) = %s' % (algo_str, path, hashobj.hexdigest()))
-    return '\n'.join(res)
+    return '\n'.join(res) + '\n'
 
 
 def checkfiles(root, checkfile):

@@ -405,5 +405,16 @@ def generate(comment, password):
 
 
 def sign_files(secret_key, algo, paths, root='.'):
+    """Make an embedded signature containing files and file hashes.
+
+    This is equivlant to signing the output of `sha256sum --tag` (or
+    `sha512sum`) and is provided here for portability.
+
+    @param secret_key: The secret key to sign with.
+    @param algo: Either the string 'SHA256' or 'SHA512'.
+    @param paths: A list of paths to hash and sign.
+    @param root: The root directory `paths` are relative from.
+    """
+
     msg = check.openbsd_sha_files(algo, root, paths).encode('utf-8')
     return sign(secret_key, msg, embed=True)

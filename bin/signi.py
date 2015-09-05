@@ -4,13 +4,29 @@
 
 import argparse
 import getpass
+import os
 import sys
 import signify.pure as signify
+
+
+def get_unprotected_secret_key(args):
+    with open(args.seckey, 'rb') as fobj:
+        seckey = signify.SecretKey.from_bytes(fobj.read())
+
+    if seckey.is_password_protected():
+        password1 = getpass.getpass()
+    else:
+        password1 = None
+
+    sku = seckey.unprotect(password1)
+
+    return sku
 
 
 def main():
     parser = argparse.ArgumentParser(usage="""
     %(prog)s -C [-q] -p pubkey -x sigfile [file ...]
+    %(prog)s -F -s seckey -x sigfile [file ...]
     %(prog)s -G [-n] [-c comment] -p pubkey -s seckey
     %(prog)s -S [-e] [-x sigfile] -s seckey -m message
     %(prog)s -V [-eq] [-x sigfile] -p pubkey -m message""")
@@ -20,7 +36,9 @@ def main():
     action_group.add_argument('-S', '--sign', action='store_true', help='sign')
     action_group.add_argument('-G', '--generate', action='store_true', help='generate')
     action_group.add_argument('-C', '--check', action='store_true', help='check signed openbsd sha256(1)')
+    action_group.add_argument('-F', '--files', action='store_true', help='sign files')
 
+    parser.add_argument('path', nargs='*')
     parser.add_argument('-p', '--pubkey', help='pubkey file')
     parser.add_argument('-s', '--seckey', help='seckey file')
     parser.add_argument('-m', '--message', help='message file')
@@ -32,6 +50,7 @@ def main():
 
     misc_group.add_argument('-n', '--nopass', action='store_true', help='do not password protect')
     misc_group.add_argument('-c', '--comment', help='comment')
+    misc_group.add_argument('-a', '--hash', help='hash algo for -F option [%(default)s]', default='sha256', choices=['sha256', 'sha512'])
     args = parser.parse_args()
 
     if args.verify:
@@ -68,21 +87,25 @@ def main():
                 print('signify: verification failed')
             sys.exit(1)
 
+    elif args.files:
+        if not (args.seckey and args.signature):
+            parser.error('-F require -s and -x')
+
+        sku = get_unprotected_secret_key(args)
+
+        sig = signify.sign_files(sku, args.hash.upper(), args.path, os.getcwd())
+
+        with open(args.signature, 'wb') as fobj:
+            fobj.write(sig.to_bytes())
+
     elif args.check:
         raise NotImplementedError('-C is the least portable signify option since it assumes OpenBSD sha256(1) output')
 
     elif args.sign:
         if not (args.seckey and args.message):
             parser.error('-S require -s and -m')
-        with open(args.seckey, 'rb') as fobj:
-            seckey = signify.SecretKey.from_bytes(fobj.read())
 
-        if seckey.is_password_protected():
-            password1 = getpass.getpass()
-        else:
-            password1 = None
-
-        sku = seckey.unprotect(password1)
+        sku = get_unprotected_secret_key(args)
 
         with open(args.message, 'rb') as fobj:
             message = fobj.read()
