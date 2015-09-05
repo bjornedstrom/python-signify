@@ -340,16 +340,27 @@ def verify(public_key, signature, message):
 def verify_embedded(public_key, embedded_message):
     """Verify an embedded signature.
 
-    See verify() for documentation.
+    If the signature verification fails, raise InvalidSignature.
+
+    Otherwise, it will return the message embedded in the signature.
+
+    @param public_key: The public key corresponding to the secret key
+    that signed the message.
+    @param embedded_message: The message(bytes) or Signature.
     """
 
     assert isinstance(public_key, PublicKey)
-    assert isinstance(embedded_message, bytes)
+    assert isinstance(embedded_message, (bytes, Signature))
+
+    if isinstance(embedded_message, Signature):
+        embedded_message = embedded_message.to_bytes()
 
     sig1, sig2, message = embedded_message.split(b'\n', 2)
     sig = sig1 + b'\n' + sig2 + b'\n'
 
-    return verify(public_key, Signature.from_bytes(sig), message)
+    verify(public_key, Signature.from_bytes(sig), message)
+
+    return message
 
 
 def generate_from_raw(comment, password, raw_pub, raw_priv):

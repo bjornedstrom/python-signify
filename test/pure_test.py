@@ -69,6 +69,10 @@ my message
             signify.verify_embedded(signify.PublicKey.from_bytes(self.KAT[0]['pub']),
                                     self.KAT[0]['embedded']))
 
+        self.assertEquals(b'my message\n',
+            signify.verify_embedded(signify.PublicKey.from_bytes(self.KAT[0]['pub']),
+                                    signify.Signature.from_bytes(self.KAT[0]['embedded'])))
+
     def test_decrypt_secret_wrong_password(self):
         self.assertRaises(KeyError,
                           signify.SecretKey.from_bytes(self.KAT[0]['priv']).unprotect,
