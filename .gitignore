@@ -1,0 +1,14 @@
+*~
+
+*.pyc
+build/
+python_signify.egg-info/
+
+.coverage
+
+debian/files
+debian/*.debhelper
+debian/*.debhelper.log
+debian/*.substvars
+debian/python-signify/
+
