@@ -1,0 +1,177 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (c) Björn Edström <be@bjrn.se> 2015. See LICENSE for details.
+
+import argparse
+import getpass
+import os
+import sys
+import signify.pure as signify
+import signify.check as check
+
+
+def get_conf_path():
+    return os.path.join(os.path.expanduser('~'), '.signify')
+
+
+def read_object(cls, path):
+    with open(path, 'rb') as fobj:
+        return getattr(cls, 'from_bytes')(fobj.read())
+
+
+def check_file_exists(parser, args, *paths):
+    if args.force:
+        return
+
+    for path in paths:
+        if os.path.exists(path):
+            parser.error('%s already exists' % (path,))
+
+
+def generate(parser, args):
+    # Validate arguments
+    if args.pubkey and args.seckey:
+        check_file_exists(parser, args, args.pubkey, args.seckey)
+    elif args.pubkey or args.seckey:
+        parser.error('-p require -s and vice versa')
+    else:
+        pubkey_file = os.path.join(args.home, args.identity + '.pub')
+        seckey_file = os.path.join(args.home, args.identity)
+        check_file_exists(parser, args, pubkey_file, seckey_file)
+
+    # Generate a keypair with optional password and comment.
+    if args.nopass:
+        password1 = None
+    else:
+        password1 = getpass.getpass('Password: ')
+        password2 = getpass.getpass('Password again: ')
+        if password1 != password2:
+            parser.error('passwords do not match')
+
+    pub, sec = signify.generate(args.comment, password1)
+
+    # -p and -s has precedence
+    if args.pubkey and args.seckey:
+        with open(args.pubkey, 'wb') as fobj:
+            fobj.write(pub.to_bytes())
+        with open(args.seckey, 'wb') as fobj:
+            fobj.write(sec.to_bytes())
+    else:
+        # Make sure home directory exists
+        if not os.path.exists(args.home):
+            os.makedirs(args.home)
+
+        with open(os.path.join(args.home, args.identity + '.pub'), 'wb') as fobj:
+            fobj.write(pub.to_bytes())
+        with open(os.path.join(args.home, args.identity), 'wb') as fobj:
+            fobj.write(sec.to_bytes())
+
+
+def sign(parser, args):
+    # Get secret key
+    if args.seckey:
+        sec = read_object(signify.SecretKey, args.seckey)
+    else:
+        seckey_file = os.path.join(args.home, args.identity)
+        sec = read_object(signify.SecretKey, seckey_file)
+
+    password = None
+    if sec.is_password_protected():
+        password = getpass.getpass('Password: ')
+
+    try:
+        sec_unprotected = sec.unprotect(password)
+    except KeyError:
+        parser.error('incorrect password')
+
+    if args.checksum:
+        sig = signify.sign_files(sec_unprotected, args.hash.upper(), args.FILE, root=os.getcwd())
+
+        # figure out output file
+        if (not args.output) or args.output == '-':
+            sys.stdout.write(sig.to_bytes().decode('utf-8'))
+        else:
+            check_file_exists(parser, args, args.output)
+            with open(args.output, 'wb') as oobj:
+                oobj.write(sig.to_bytes())
+    else:
+        files = args.FILE
+        if len(files) != 1:
+            parser.error('expected one FILE')
+        with open(files[0], 'rb') as fobj:
+            message = fobj.read()
+        sig = signify.sign(sec_unprotected, message, embed=args.embed)
+
+        # figure out output file
+        output_file = files[0] + '.sig'
+        print_to_file = True
+        if args.output:
+            if args.output == '-':
+                print_to_file = False
+                sys.stdout.write(sig.to_bytes().decode('utf-8'))
+            else:
+                output_file = args.output
+        if print_to_file:
+            check_file_exists(parser, args, output_file)
+            with open(output_file, 'wb') as oobj:
+                oobj.write(sig.to_bytes())
+
+
+def verify(parser, args):
+    raise NotImplementedError('verify')
+
+
+def main():
+    identity = 'id_' + getpass.getuser()
+
+    parser = argparse.ArgumentParser()
+
+    subparsers = parser.add_subparsers(title='subcommands')
+
+    # sign
+    parser_sign = subparsers.add_parser('sign', help='sign data',
+                                        usage="""
+  %(prog)s FILE
+  %(prog)s --embed FILE
+  %(prog)s --checksum FILE [FILE ...]""")
+    parser_sign.add_argument('-o', '--output', metavar='PATH', help='signature file output')
+    parser_sign.add_argument('-e', '--embed', action='store_true', help='generate embedded signature')
+    parser_sign.add_argument('-c', '--checksum', action='store_true', help='sign checksums over files')
+    parser_sign.add_argument('--hash', help='hash algorithm to use with -c [%(default)s]', default='sha256', choices=['sha256', 'sha512'])
+    parser_sign.add_argument('FILE', nargs='+', help='file to sign')
+    parser_sign.set_defaults(func=sign)
+
+    # verify
+    parser_verify = subparsers.add_parser('verify', help='verify signatures')
+    parser_verify.add_argument('-x', '--signature', help='signature file')
+    parser_verify.add_argument('-e', '--embed', action='store_true', help='verify embedded signature')
+    parser_verify.add_argument('-c', '--checksum', action='store_true', help='verified signed checksum file')
+    parser_verify.add_argument('FILE', nargs='+', help='file(s) to verify')
+    parser_verify.set_defaults(func=verify)
+
+    # generate
+    parser_generate = subparsers.add_parser('generate', help='generate a keypair', usage="""
+  %(prog)s [--nopass] [--comment COMMENT]""")
+    parser_generate.add_argument('-c', '--comment', help='key pair comment [%(default)s]', default='signify')
+    parser_generate.add_argument('-n', '--nopass', action='store_true', help='do not password protect secret key')
+    parser_generate.set_defaults(func=generate)
+
+    # identity / key pair options
+    keypair_group = parser.add_argument_group('key pair/identity options')
+    keypair_group.add_argument('-i', '--identity', metavar='ID', help='identity file [%(default)s]', default=identity)
+    keypair_group.add_argument('-p', '--pubkey', metavar='PATH', help='path to public key file')
+    keypair_group.add_argument('-s', '--seckey', metavar='PATH', help='path to secret key file')
+    keypair_group.add_argument('--home', metavar='PATH', help='key file search directory [%(default)s]', default=get_conf_path())
+
+    # misc options
+    misc_group = parser.add_argument_group('misc options')
+    misc_group.add_argument('-f', '--force', action='store_true', help='force action')
+    misc_group.add_argument('-q', '--quiet', action='store_true', help='silence output')
+
+    args = parser.parse_args()
+
+    args.func(parser, args)
+
+
+if __name__ == '__main__':
+    main()
