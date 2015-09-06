@@ -121,7 +121,7 @@ You sign and verify these as follows:
 
 ```python
 import os
-from signify.pure import PublicKey, SecretKey, sign_files
+from signify.pure import PublicKey, SecretKey, Signature, sign_files, verify_files
 
 # Sign
 sk = SecretKey.from_bytes(...)
@@ -130,7 +130,9 @@ paths = ['bjorn.pub', 'bjorn.sec']
 sig = sign_files(sku, 'SHA256', paths, root=os.getcwd())
 
 # Verify
-TODO
+pk = PublicKey.from_bytes(...)
+sig = Signature.from_bytes(...)
+print(verify_files(pk, sig, root=os.getcwd()))
 ```
 
 ## Extras

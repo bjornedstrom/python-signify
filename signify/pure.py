@@ -418,3 +418,22 @@ def sign_files(secret_key, algo, paths, root='.'):
 
     msg = check.openbsd_sha_files(algo, root, paths).encode('utf-8')
     return sign(secret_key, msg, embed=True)
+
+
+def verify_files(public_key, signature, root='.'):
+    """Verify the output of sign_files().
+
+    Raise InvalidSignature on error.
+
+    Returns a list of (path, status) tuples where status is True if
+    checksum matches, otherwise False.
+
+    @param public_key: The public key to check against.
+    @param signature: The embedded signature containing the hashes.
+    @param root: The directory of which the paths in the signature are
+    relative against.
+    """
+
+    checkfile = verify_embedded(public_key, signature)
+
+    return list(check.checkfiles(root, checkfile))
