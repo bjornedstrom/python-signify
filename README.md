@@ -108,6 +108,31 @@ embedded_signature = Signature.from_bytes(<embedded signature>)
 print(verify_embedded(pk, embedded_signature))
 ```
 
+### Signing Files
+
+A common Signify use case is to sign one or more files, such as source code distributions. The Signify convention as used in OpenBSD is to make an embedded signature (see above) of the output of OpenBSD `sha256(1)` or Linux `sha256sum --tag` (SHA512 is also common). These looks like this:
+
+    untrusted comment: signature from signify secret key
+    RWQwAARFerRo1COfT3i7SkSrTjDImrhchgmiX2Vbmy9LZdRM6jJhzMQZFLlZKKEOiEcbLAtzpvJ0TT4dqYYfClpoUfoTnnF4sgM=
+    SHA256 (bjorn.pub) = a829d2df993afa575607d77ca4f1a813d9486f07f45b826386c337a2d712d721
+    SHA256 (bjorn.sec) = b4b8b2d99549fa2c67848e1f6e091a3ea0696c6106755299a7424940524552c0
+
+You sign and verify these as follows:
+
+```python
+import os
+from signify import PublicKey, SecretKey, sign_files
+
+# Sign
+sk = SecretKey.from_bytes(...)
+sku = sk.unprotect('password')
+paths = ['bjorn.pub', 'bjorn.sec']
+sig = sign_files(sku, 'SHA256', paths, root=os.getcwd())
+
+# Verify
+TODO
+```
+
 ## Extras
 
 ### Subprocess based wrapper around signify(1)
