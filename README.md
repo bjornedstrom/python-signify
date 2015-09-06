@@ -4,22 +4,28 @@
 
 [![Build Status](https://travis-ci.org/bjornedstrom/python-signify.png?branch=master)](https://travis-ci.org/bjornedstrom/python-signify)
 
-[Signify](http://www.tedunangst.com/flak/post/signify) was originally written for OpenBSD to sign files and packages, as a light-weight replacement for using PGP. python-signify contains some code for working with signify keys/signatures from Python. The module allow you to sign, verify and generate keypairs.
+[Signify](http://www.tedunangst.com/flak/post/signify) was originally written for OpenBSD to sign files and packages, as a light-weight replacement for using PGP. python-signify is a module for working with Signify keys/signatures from Python. The module allow you to sign/verify messages and work with Signify keypairs.
 
-Specifically this project contains two modules that you can use depending on preference: the first one re-implements Signify functionality directly. The second one uses the `subprocess` module and depends on the `signify` binary.
+Specifically this project contains two modules that you can use depending on requirements: the first one re-implements Signify functionality directly, and is the recommended use of python-signify. The second one uses the `subprocess` module and use the `signify` binary.
 
 There is also a driver program using the library: `signi.py`, which is similar to the normal signify program in behavior.
 
-## Module 1: "Pure" Python version (RECOMMENDED)
+## Installation
 
-The `signify.pure` module has a Python implementation of some parts of `signify`, without requiring the signify binary or the subprocess module. This code requires the Python bcrypt and ed25519 modules.
+python-signify is tested on a few versions of Python 2 and 3.
 
-### Dependencies
+The `signify.pure` module has a Python implementation of some parts of Signify, without requiring the `signify` binary:
 
 - [python-ed25519](https://github.com/warner/python-ed25519]) (`pip install ed25519`)
 - [py-bcrypt](py-bcrypt) (`pip install py-bcrypt`)
 
-### API Example
+If you use the `subprocess` based module, then there are no dependencies other than that `signify` is installed  on the system and reachable on PATH.
+
+## Usage
+
+Signify keys and signatures are `b'python bytestrings'` that start with the string `b'untrusted comment:'`. From this representation, you can create a `PublicKey`, `SecretKey` and `Signature` object using the `.from_bytes()` method, as shown in the example below (the opposite direction is called `.to_bytes()`):
+
+### API Example (tl;dr)
 
 ```python
 import signify.pure as signify
@@ -43,7 +49,68 @@ print(new_sig.to_bytes())
 print(signify.verify(new_pub, new_sig, message))
 ```
 
-## Module 2: Subprocess based wrapper around signify(1)
+### Secret Keys and Signing
+
+Before you can use a `SecretKey` for the signing operation, you have to decrypt it using the `SecretKey.unprotect()` method. A normal pattern is as follows:
+
+```python
+from signify import SecretKey, sign
+sk = SecretKey.from_bytes(...)
+sku = sk.unprotect('password')
+sig = sign(sku, b'my message')
+print(sig.to_bytes())
+```
+
+### Public Keys and Verifying
+
+The `verify` function takes a public key, a signature and the bytestring that was signed. `InvalidSignature` will be raised on invalid signatures.
+
+```python
+from signify import PublicKey, Signature, verify
+pk = PublicKey.from_bytes(...)
+sig = Signature.from_bytes(...)
+print(verify(pk, sig, b'my message'))
+```
+
+### Generating a New Keypair
+
+If you do not already have a Signify keypair (`signify -G`) you can generate one as follows:
+
+```python
+from signify import generate
+pk, sk = generate('alice aliceson', 'password')
+```
+
+The first parameter is a comment describing the key.
+
+### Embedded Signatures
+
+An "embedded signature" is the concatenation of a signature and the message signed. An embedded signature looks like this:
+
+    untrusted comment: signature from signify secret key
+    RWQwAARFerRo1COfT3i7SkSrTjDImrhchgmiX2Vbmy9LZdRM6j...
+    Here is my signed message!
+
+Signing and verifying embedded signatures works as follows:
+
+```python
+from signify import PublicKey, SecretKey, sign, verify_embedded
+
+# Sign
+sk = SecretKey.from_bytes(...)
+sku = sk.unprotect('password')
+sig = sign(sku, b'my message', embed=True)
+print(sig.to_bytes())
+
+# Verify
+pk = PublicKey.from_bytes(...)
+embedded_signature = Signature.from_bytes(<embedded signature>)
+print(verify_embedded(pk, embedded_signature))
+```
+
+## Extras
+
+### Subprocess based wrapper around signify(1)
 
 `signify.wrapper` is a fairly simple (subprocess based) wrapper around the OpenBSD signify(1) command. It basically does two things for you to make your life a little bit easier:
 
@@ -52,11 +119,9 @@ print(signify.verify(new_pub, new_sig, message))
 
 Please make sure you read and understand the library docstrings before you use the code. There are some security considerations.
 
-### API
-
 The wrapper API is a little bit different from the pure API. Please consult the docstrings for more information.
 
-## Driver Program
+### Driver Program
 
 Work in progress:
 
