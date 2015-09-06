@@ -10,7 +10,7 @@ Specifically this project contains two modules that you can use depending on req
 
 There is also a driver program using the library: `signi.py`, which is similar to the normal signify program in behavior.
 
-### Security Warning
+#### Security Warning
 
 Obligatory security warning for Python projects using cryptographic keys: python-signify makes **no** attempts to guard your secret keys against memory based attacks. If you use python-signify you realize that your secret keys may end up in swap space, or in computer RAM longer than necessary. If this is a problem for you, do not use python-signify.
 
