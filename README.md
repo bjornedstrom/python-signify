@@ -14,7 +14,7 @@ There is also a driver program using the library: `signi.py`, which is similar t
 
 python-signify is tested on a few versions of Python 2 and 3.
 
-The `signify.pure` module has a Python implementation of some parts of Signify, without requiring the `signify` binary:
+The `signify.pure` module has a Python implementation of some parts of Signify, without requiring the `signify` binary. This module has two dependencies:
 
 - [python-ed25519](https://github.com/warner/python-ed25519]) (`pip install ed25519`)
 - [py-bcrypt](py-bcrypt) (`pip install py-bcrypt`)
@@ -54,7 +54,7 @@ print(signify.verify(new_pub, new_sig, message))
 Before you can use a `SecretKey` for the signing operation, you have to decrypt it using the `SecretKey.unprotect()` method. A normal pattern is as follows:
 
 ```python
-from signify import SecretKey, sign
+from signify.pure import SecretKey, sign
 sk = SecretKey.from_bytes(...)
 sku = sk.unprotect('password')
 sig = sign(sku, b'my message')
@@ -66,7 +66,7 @@ print(sig.to_bytes())
 The `verify` function takes a public key, a signature and the bytestring that was signed. `InvalidSignature` will be raised on invalid signatures.
 
 ```python
-from signify import PublicKey, Signature, verify
+from signify.pure import PublicKey, Signature, verify
 pk = PublicKey.from_bytes(...)
 sig = Signature.from_bytes(...)
 print(verify(pk, sig, b'my message'))
@@ -77,7 +77,7 @@ print(verify(pk, sig, b'my message'))
 If you do not already have a Signify keypair (`signify -G`) you can generate one as follows:
 
 ```python
-from signify import generate
+from signify.pure import generate
 pk, sk = generate('alice aliceson', 'password')
 ```
 
@@ -94,7 +94,7 @@ An "embedded signature" is the concatenation of a signature and the message sign
 Signing and verifying embedded signatures works as follows:
 
 ```python
-from signify import PublicKey, SecretKey, sign, verify_embedded
+from signify.pure import PublicKey, SecretKey, sign, verify_embedded
 
 # Sign
 sk = SecretKey.from_bytes(...)
@@ -121,7 +121,7 @@ You sign and verify these as follows:
 
 ```python
 import os
-from signify import PublicKey, SecretKey, sign_files
+from signify.pure import PublicKey, SecretKey, sign_files
 
 # Sign
 sk = SecretKey.from_bytes(...)
