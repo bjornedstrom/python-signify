@@ -4,7 +4,7 @@
 
 [![Build Status](https://travis-ci.org/bjornedstrom/python-signify.png?branch=master)](https://travis-ci.org/bjornedstrom/python-signify)
 
-[Signify](http://www.tedunangst.com/flak/post/signify) was originally written for OpenBSD to sign files and packages, as a light-weight replacement for using PGP. python-signify is a module for working with Signify keys/signatures from Python. The module allow you to sign/verify messages and work with Signify keypairs.
+[Signify](http://www.tedunangst.com/flak/post/signify) was originally written for OpenBSD to sign files and packages, as a light-weight replacement to using PGP. **python-signify** is a module for working with Signify keys/signatures from Python. This module allow you to sign/verify messages and work with Signify keypairs.
 
 Specifically this project contains two modules that you can use depending on requirements: the first one re-implements Signify functionality directly, and is the recommended use of python-signify. The second one uses the `subprocess` module and use the `signify` binary.
 
@@ -108,7 +108,7 @@ embedded_signature = Signature.from_bytes(<embedded signature>)
 print(verify_embedded(pk, embedded_signature))
 ```
 
-### Signing Files
+### Signing and Verifying Files
 
 A common Signify use case is to sign one or more files, such as source code distributions. The Signify convention as used in OpenBSD is to make an embedded signature (see above) of the output of OpenBSD `sha256(1)` or Linux `sha256sum --tag` (SHA512 is also common). These looks like this:
 
@@ -148,15 +148,23 @@ Please make sure you read and understand the library docstrings before you use t
 
 The wrapper API is a little bit different from the pure API. Please consult the docstrings for more information.
 
-### Driver Program
+### `signi.py` - Reference Driver Program
 
-Work in progress:
+`signi.py` has similar behavior as the normal `signify` program and is included for convenience.
 
     $ signi.py -h
     usage:
+        signi.py -C [-q] -p pubkey -x sigfile [file ...]
+        signi.py -F -s seckey -x sigfile [file ...]
         signi.py -G [-n] [-c comment] -p pubkey -s seckey
         signi.py -S [-e] [-x sigfile] -s seckey -m message
         signi.py -V [-eq] [-x sigfile] -p pubkey -m message
+
+- `-G` generates a new keypair.
+- `-S` and `-V` signs and generates an arbitrary message, respectively.
+- `-F` and `-C` signs and checks files, respectively (see the "Sign Files" section above for more information).
+
+`signi.py -F` option is not included in the normal `signify` binary but is included for convenience.
 
 ## About
 
