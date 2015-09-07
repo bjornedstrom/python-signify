@@ -20,6 +20,7 @@ setup(
         'ed25519'
     ],
     scripts=[
-        'bin/signi.py'
+        'bin/signi.py',
+        'bin/signipie',
     ]
 )
