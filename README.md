@@ -112,7 +112,7 @@ embedded_signature = Signature.from_bytes(<embedded signature>)
 print(verify_embedded(pk, embedded_signature))
 ```
 
-### Signing and Verifying Files
+### Signing and Verifying Multiple Files
 
 A common Signify use case is to sign one or more files, such as source code distributions. The Signify convention as used in OpenBSD is to make an embedded signature (see above) of the output of OpenBSD `sha256(1)` or Linux `sha256sum --tag` (SHA512 is also common). These looks like this:
 
@@ -138,6 +138,38 @@ pk = PublicKey.from_bytes(...)
 sig = Signature.from_bytes(...)
 print(verify_files(pk, sig, root=os.getcwd()))
 ```
+
+## Signipie
+
+`signipie` is a command line program that is similar to `signify` but is written to be slightly more user friendly. It has the same basic functionality as `signify` but with some additional convenience helpers around key management and command line parsing.
+
+### Signipie Key Management
+
+Signipie will look for your secret key in `~/.signify/id_$USER` by default. In addition, it will look for your trusted public keys in `~/.signify/trusted/`. If you have copies of your keys in these directories, then `signipie` can be invoked without specifying key search directories.
+
+If you have multiple Signify key-pairs, then they can be given an id instead of you having to type out full path names to the keys each time.
+
+Of course, `signipie` can be invoked with explicit keys, similar to `signify`, if that is desired.
+
+### Signing and Verifying with Signipie
+
+Once your file system is set up, that is the above directories are created, you can sign and verify messages simply as follows:
+
+    $ signipie sign my-file
+    $ cat my-file.sig
+	$ signipie verify -x my-file.sig my-file
+
+To make an embedded signature, simply add an `-e`:
+
+    $ signipie sign -e my-file
+	$ cat my-file.sig
+	$ signipie verify -e -x my-file.sig
+
+To sign multiple files:
+
+    $ signipie sign -c bjorn.pub bjorn.sec > bjorn-files
+	$ cat bjorn-files
+	$ signipie verify -c -x bjorn-files
 
 ## Extras
 
