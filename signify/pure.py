@@ -426,7 +426,8 @@ def verify_files(public_key, signature, root='.'):
     Raise InvalidSignature on error.
 
     Returns a list of (path, status) tuples where status is True if
-    checksum matches, otherwise False.
+    checksum matches, otherwise False if verification fails, or an
+    Exception instance (if for example the file can't be opened).
 
     @param public_key: The public key to check against.
     @param signature: The embedded signature containing the hashes.
@@ -436,4 +437,4 @@ def verify_files(public_key, signature, root='.'):
 
     checkfile = verify_embedded(public_key, signature)
 
-    return list(check.checkfiles(root, checkfile))
+    return list(check.checkfiles(root, checkfile.decode('utf-8')))

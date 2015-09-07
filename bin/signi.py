@@ -126,7 +126,12 @@ def main():
                 if not status:
                     exit_fail = True
                 if not args.quiet:
-                    print('%s: %s' % (path, 'OK' if status else 'FAIL'))
+                    if status == True:
+                        print('%s: OK' % (path,))
+                    elif status == False:
+                        print('%s: FAIL' % (path,))
+                    else:
+                        print('%s: FAIL (%s)' % (path, str(status)))
 
         if exit_fail:
             sys.exit(1)

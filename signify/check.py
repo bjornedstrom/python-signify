@@ -37,7 +37,10 @@ def checkfiles(root, checkfile):
             r'^(\S+) [(]([^)]+)[)] = ([0-9a-fA-F]+)$', checkfile, re.M):
         hash_cls = ALGO_TO_CLS[algo]
         hashobj = hash_cls()
-        hash_file(hashobj, os.path.join(root, path))
-        digest = hashobj.hexdigest()
-        status = digest.upper() == ref_digest.upper()
+        try:
+            hash_file(hashobj, os.path.join(root, path))
+            digest = hashobj.hexdigest()
+            status = digest.upper() == ref_digest.upper()
+        except Exception as e:
+            status = e
         yield (path, status)
