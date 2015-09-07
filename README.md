@@ -8,7 +8,7 @@
 
 Specifically this project contains two modules that you can use depending on requirements: the first one re-implements Signify functionality directly, and is the recommended use of python-signify. The second one uses the `subprocess` module and use the `signify` binary.
 
-There is also a driver program using the library: `signi.py`, which is similar to the normal signify program in behavior.
+There is also a driver program using the library: `signipie`, which is offer some additional convenience over the reference `signify` implementation.
 
 #### Security Warning
 
@@ -147,7 +147,7 @@ print(verify_files(pk, sig, root=os.getcwd()))
 
 Signipie will look for your secret key in `~/.signify/id_$USER` by default. In addition, it will look for your trusted public keys in `~/.signify/trusted/`. If you have copies of your keys in these directories, then `signipie` can be invoked without specifying key search directories.
 
-If you have multiple Signify key-pairs, then they can be given an id instead of you having to type out full path names to the keys each time.
+If you have multiple Signify key-pairs, then they can be given an id (an alias to two paths) instead of you having to type out full path names to the keys each time.
 
 Of course, `signipie` can be invoked with explicit keys, similar to `signify`, if that is desired.
 
