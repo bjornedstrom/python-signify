@@ -8,7 +8,7 @@
 
 Specifically this project contains two modules that you can use depending on requirements: the first one re-implements Signify functionality directly, and is the recommended use of python-signify. The second one uses the `subprocess` module and use the `signify` binary.
 
-There is also a driver program using the library: `signipie`, which is offer some additional convenience over the reference `signify` implementation.
+There is also a driver program using the library: `signipie`, which offer some additional convenience over the reference `signify` implementation.
 
 #### Security Warning
 
