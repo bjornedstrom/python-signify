@@ -158,6 +158,7 @@ Once your file system is set up according to the layout above, you can sign and 
     $ signipie sign my-file
     $ cat my-file.sig
 	$ signipie verify -x my-file.sig my-file
+	Signature Verified (key: id_bjorn.pub)
 
 To make an embedded signature, simply add an `-e`:
 

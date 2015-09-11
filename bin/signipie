@@ -18,9 +18,12 @@ def get_conf_path():
     return os.path.join(os.path.expanduser('~'), '.signify')
 
 
-def read_object(cls, path):
-    with open(path, 'rb') as fobj:
-        return getattr(cls, 'from_bytes')(fobj.read())
+def read_object(parser, cls, path):
+    try:
+        with open(path, 'rb') as fobj:
+            return getattr(cls, 'from_bytes')(fobj.read())
+    except Exception as e:
+        parser.error(str(e))
 
 
 def check_file_exists(parser, args, *paths):
@@ -74,10 +77,10 @@ def generate(parser, args):
 def sign(parser, args):
     # Get secret key
     if args.seckey:
-        sec = read_object(signify.SecretKey, args.seckey)
+        sec = read_object(parser, signify.SecretKey, args.seckey)
     else:
         seckey_file = os.path.join(args.home, args.identity)
-        sec = read_object(signify.SecretKey, seckey_file)
+        sec = read_object(parser, signify.SecretKey, seckey_file)
 
     password = None
     if sec.is_password_protected():
@@ -143,7 +146,7 @@ def verify(parser, args):
     keys_path = os.path.join(args.home, 'trusted')
     keys = []
     if args.pubkey:
-        pub = read_object(signify.PublicKey, args.pubkey)
+        pub = read_object(parser, signify.PublicKey, args.pubkey)
         setattr(pub, 'path', args.pubkey)
         keys.append(pub)
     else:
@@ -151,7 +154,7 @@ def verify(parser, args):
             for path in os.listdir(keys_path):
                 full_path = os.path.join(keys_path, path)
                 try:
-                    pub = read_object(signify.PublicKey, full_path)
+                    pub = read_object(parser, signify.PublicKey, full_path)
                     setattr(pub, 'path', path)
                     keys.append(pub)
                 except signify.SignifyError as e:
@@ -162,9 +165,9 @@ def verify(parser, args):
 
     # Pick up signature file
     if args.signature:
-        sig = read_object(signify.Signature, args.signature)
+        sig = read_object(parser, signify.Signature, args.signature)
     elif args.embed:
-        sig = read_object(signify.Signature, args.FILE[0])
+        sig = read_object(parser, signify.Signature, args.FILE[0])
 
     # Pick up message (for normal operation)
     message = None
