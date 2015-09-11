@@ -145,15 +145,15 @@ print(verify_files(pk, sig, root=os.getcwd()))
 
 ### Signipie Key Management
 
-Signipie will look for your secret key in `~/.signify/id_$USER` by default. In addition, it will look for your trusted public keys in `~/.signify/trusted/`. If you have copies of your keys in these directories, then `signipie` can be invoked without specifying key search directories.
+Signipie will look for your key-pair(s) in `~/.signify`, where the default key-pair is `~/.signify/id_$USER` and `~/.signify/id_$USER.pub` for the secret and public key, respectively. In addition, it will look for your trusted public keys in `~/.signify/trusted/`. If you have copies of your keys in these directories, then `signipie` can be invoked without specifying key search directories.
 
-If you have multiple Signify key-pairs, then they can be given an id (an alias to two paths) instead of you having to type out full path names to the keys each time.
+If you have multiple Signify key-pairs, then they can be given an id instead of you having to type out full path names to the keys each time. An id is simply a name or label given to your keys. For example, the two keys `~/.signify/id_alice` and `~/.signify/id_alice.pub` collectively have the id `id_alice`.
 
 Of course, `signipie` can be invoked with explicit keys, similar to `signify`, if that is desired.
 
 ### Signing and Verifying with Signipie
 
-Once your file system is set up, that is the above directories are created, you can sign and verify messages simply as follows:
+Once your file system is set up according to the layout above, you can sign and verify messages simply as follows:
 
     $ signipie sign my-file
     $ cat my-file.sig
