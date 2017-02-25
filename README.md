@@ -20,8 +20,8 @@ python-signify is tested on a few versions of Python 2 and 3.
 
 The `signify.pure` module has a Python implementation of some parts of Signify, without requiring the `signify` binary. This module has two dependencies:
 
-- [python-ed25519](https://github.com/warner/python-ed25519]) (`pip install ed25519`)
-- [py-bcrypt](py-bcrypt) (`pip install py-bcrypt`)
+- [python-ed25519](https://github.com/warner/python-ed25519) (`pip install ed25519`)
+- [py-bcrypt](https://github.com/pyca/bcrypt) (`pip install py-bcrypt`)
 
 If you use the `subprocess` based module, then there are no dependencies other than that `signify` is installed  on the system and reachable on PATH.
 
