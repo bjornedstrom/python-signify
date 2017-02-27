@@ -26,7 +26,18 @@ RWQ100QRGZoxU/gjzE8m6GYtfICqE0Ap8SdXRSHrpjnSBKMc2RMXlgi5RKrEHmKfTmcsuB9ZzDCo6K6s
             'embedded': b"""untrusted comment: signature from bjorntest secret key
 RWQ100QRGZoxU/gjzE8m6GYtfICqE0Ap8SdXRSHrpjnSBKMc2RMalgi5RKrEHmKfTmcsuB9ZzDCo6K6sYEqaEcEnnAFa0zCewAg=
 my message
-"""
+""",
+            'priv128': b"""untrusted comment: signify secret key 128 rounds
+RWRCSwAAAIBK/82p6+aolZQUgs7+JP0Fssf+TPHDVC316WVHxrWWJx4W4cy8wTy9FKGCSNBMvTII0cddRe3Ls0TWBfwOHOSgOJ7GcF9zfmDeqMM63lRcObSY48BkOCz1gqOTvcSGvos=
+""",
+            'pub128': b"""untrusted comment: public key for priv128 key
+untrusted comment: signify public key
+RWT16WVHxrWWJzuyLW1zO7uTWPPejer1uX0PX4Y/1bkwaDgnbeU6dHnL
+""",
+            'embedded128': b"""untrusted comment: signature from signify secret key 128 rounds
+RWT16WVHxrWWJ2fhavXHp1SDGZLzI8vpNxWyvbzXYIptU/L5xzZ/Sq+yDwFJ3u8W1Xi4CmEy+0xfM59dk/yVp6MLAifaGG9obQI=
+my message
+""",
             }
         ]
 
@@ -120,6 +131,16 @@ my message
             signify.verify(pub,
                            sig,
                            b'My Message'))
+
+
+    def test_sign_embedded_128_rounds(self):
+        sk = signify.SecretKey.from_bytes(self.KAT[0]['priv128'])
+        sku = sk.unprotect('foobar')
+        sig = signify.sign(sku,
+                           self.KAT[0]['message'],
+                           True)
+
+        self.assertEquals(self.KAT[0]['embedded128'], sig.to_bytes())
 
 
 if __name__ == '__main__':

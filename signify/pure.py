@@ -236,7 +236,7 @@ class SecretKey(_Materialized):
 
             assert pkalg == b'Ed'
             assert kdfalg == b'BK'
-            assert kdfrounds in [0, 42]
+            assert kdfrounds >= 0 and kdfrounds <= 2**31
         except Exception as e:
             raise SignifyError(e)
 
@@ -368,7 +368,9 @@ def generate_from_raw(comment, password, raw_pub, raw_priv):
     keynum = os.urandom(8)
 
     # private key
-    kdfrounds = 42
+    # see _bcrypt_autorounds() in OpenBSD:src/lib/libc/crypt/bcrypt.c if you
+    # want to change number of rounds to something that matches your machine
+    kdfrounds = 2**7
     salt = os.urandom(16)
 
     if password is None:
