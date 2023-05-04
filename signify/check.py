@@ -17,7 +17,7 @@ def hash_file(hashobj, path):
         while True:
             buf = fobj.read(BUFSIZE)
             hashobj.update(buf)
-            if buf != BUFSIZE:
+            if len(buf) != BUFSIZE:
                 break
     return True
 
